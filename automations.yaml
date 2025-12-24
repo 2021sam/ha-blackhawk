@@ -1,0 +1,221 @@
+- id: '1761453682542'
+  alias: Announce – Front Door Open/Closed
+  description: Speak when the front door contact changes
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.lumi_lumi_sensor_magnet_aq2_opening
+    from: 'off'
+    to: 'on'
+  - trigger: state
+    entity_id: binary_sensor.lumi_lumi_sensor_magnet_aq2_opening
+    from: 'on'
+    to: 'off'
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.from_state is not none }}'
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.state == ''on'' }}'
+      sequence:
+      - action: tts.speak
+        target:
+          entity_id: tts.google_translate_en_com
+        data:
+          media_player_entity_id: media_player.family_room
+          message: Front door opened.
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.state == ''off'' }}'
+      sequence:
+      - action: tts.speak
+        target:
+          entity_id: tts.google_translate_en_com
+        data:
+          media_player_entity_id: media_player.family_room
+          message: Front door closed.
+  mode: single
+- id: '1761941974727'
+  alias: Stairs UP → DOWN announce (Family Room)
+  description: ''
+  triggers:
+  - entity_id: binary_sensor.stairs_motion_upper_occupancy
+    to: 'on'
+    trigger: state
+  conditions:
+  - condition: template
+    value_template: "{{ (now() - (state_attr(this.entity_id, 'last_triggered') or\n
+      \           now() - timedelta(seconds=60))).total_seconds() > 15 }}"
+  actions:
+  - wait_for_trigger:
+    - entity_id: binary_sensor.stairs_motion_lower_occupancy
+      to: 'on'
+      trigger: state
+    timeout: 00:00:05
+    continue_on_timeout: false
+  - target:
+      entity_id: media_player.family_room
+    action: media_player.turn_on
+  - choose:
+    - conditions:
+      - condition: sun
+        after: sunset
+        before: sunrise
+      sequence:
+      - target:
+          entity_id: media_player.family_room
+        data:
+          volume_level: 0.5
+        action: media_player.volume_set
+    default:
+    - target:
+        entity_id: media_player.family_room
+      data:
+        volume_level: 0.55
+      action: media_player.volume_set
+  - target:
+      entity_id: tts.google_translate_en_com
+    data:
+      media_player_entity_id: media_player.family_room
+      message: Someone is coming downstairs.
+    action: tts.speak
+  mode: single
+- id: '1761942010470'
+  alias: Stairs  DOWN → UP - speak to (Family Room) audio
+  description: ''
+  triggers:
+  - entity_id: binary_sensor.stairs_motion_lower_occupancy
+    to: 'on'
+    trigger: state
+  conditions:
+  - condition: template
+    value_template: "{{ (now() - (state_attr(this.entity_id, 'last_triggered') or\n
+      \           now() - timedelta(seconds=60))).total_seconds() > 15 }}"
+  actions:
+  - wait_for_trigger:
+    - entity_id: binary_sensor.stairs_motion_upper_occupancy
+      to: 'on'
+      trigger: state
+    timeout: 00:00:05
+    continue_on_timeout: false
+  - target:
+      entity_id: media_player.family_room
+    action: media_player.turn_on
+  - choose:
+    - conditions:
+      - condition: sun
+        after: sunset
+        before: sunrise
+      sequence:
+      - target:
+          entity_id: media_player.family_room
+        data:
+          volume_level: 0.35
+        action: media_player.volume_set
+    default:
+    - target:
+        entity_id: media_player.family_room
+      data:
+        volume_level: 0.55
+      action: media_player.volume_set
+  - target:
+      entity_id: tts.google_translate_en_com
+    data:
+      media_player_entity_id: media_player.family_room
+      message: Someone is going upstairs.
+    action: tts.speak
+  mode: single
+- id: '1762157138765'
+  alias: Door → Man Cave Lights (open=ON, closed=OFF)
+  description: Use Aqara door sensor to control man cave ceiling lights
+  triggers:
+  - entity_id: binary_sensor.lumi_lumi_sensor_magnet_aq2_opening
+    to: 'on'
+    trigger: state
+  - entity_id: binary_sensor.lumi_lumi_sensor_magnet_aq2_opening
+    to: 'off'
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.state == ''on'' }}'
+      sequence:
+      - target:
+          entity_id: light.man_cave_ceiling_lights
+        data:
+          transition: 1
+          brightness_pct: 80
+        action: light.turn_on
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.state == ''off'' }}'
+      sequence:
+      - target:
+          entity_id: light.man_cave_ceiling_lights
+        data:
+          transition: 1
+        action: light.turn_off
+  mode: single
+- id: '1762596176562'
+  alias: Atrium PIR → Man Cave Lights (until PIR clears)
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.sonoff_1_occupancy
+    to: 'on'
+  actions:
+  - data:
+      reason: Motion in the atrium
+    action: script.atrium_lights_on_reasoned
+  - wait_for_trigger:
+    - trigger: state
+      entity_id: binary_sensor.sonoff_1_occupancy
+      to: 'off'
+    timeout: 02:00:00
+    continue_on_timeout: false
+  - data:
+      reason: No motion for about one minute
+    action: script.atrium_lights_off_reasoned
+  mode: restart
+- id: '1766291546280'
+  alias: TEST – Motion → TTS Family Room
+  description: Simple PIR test
+  triggers:
+  - entity_id: binary_sensor.sonoff_1_occupancy
+    to: 'on'
+    trigger: state
+  actions:
+  - target:
+      entity_id: tts.google_translate_en_com
+    data:
+      media_player_entity_id: media_player.family_room
+      message: Motion detected in the Mancave !
+    action: tts.speak
+  mode: single
+- id: '1766446032104'
+  alias: TEST - Motion → Ceiling Lights
+  triggers:
+  - entity_id: binary_sensor.sonoff_1_occupancy
+    to: 'on'
+    trigger: state
+  actions:
+  - target:
+      entity_id: light.wall_dimmer_1
+    action: light.turn_on
+  mode: restart
+- id: '1766461435829'
+  alias: TEST – Man Cave Light auto OFF after 10s
+  description: Single-device light auto-off test
+  triggers:
+  - entity_id: light.wall_dimmer_1
+    to: 'on'
+    trigger: state
+  actions:
+  - delay: 00:00:10
+  - target:
+      entity_id: light.wall_dimmer_1
+    action: light.turn_off
+  mode: restart

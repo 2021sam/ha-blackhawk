@@ -1,0 +1,20 @@
+# HA runtime/state (do not version)
+.storage/
+.cloud/
+tts/
+deps/
+*.db
+*.db-shm
+*.db-wal
+zigbee.db*
+home-assistant_v2.db*
+home-assistant.log*
+home-assistant.log.fault
+.HA_VERSION
+.ha_run.lock
+
+# Secrets / keys
+secrets.yaml
+*.pem
+*.key
+*.crt
