@@ -1,5 +1,3 @@
----
-
 ```md
 # A30 Audio Controller – Home Assistant Setup
 
