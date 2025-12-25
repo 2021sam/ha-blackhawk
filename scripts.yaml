@@ -53,3 +53,42 @@ atrium_lights_off_reasoned:
       media_player_entity_id: media_player.family_room
       message: "Atrium lights off — {{\n  states('input_text.atrium_last_light_reason')\n
         \ | default('unknown reason', true)\n}}"
+test_play_soundscape:
+  alias: TEST – Play Soundscape
+  mode: single
+  sequence:
+  - target:
+      entity_id: media_player.family_room
+    data:
+      media_content_id: /local/soundscapes/1.wav
+      media_content_type: music
+    action: media_player.play_media
+  description: ''
+test_play_soundscape_url:
+  alias: TEST – Play Soundscape - url
+  mode: single
+  sequence:
+  - action: media_player.volume_set
+    target:
+      entity_id: media_player.family_room
+    data:
+      volume_level: 0.5
+  - action: media_player.play_media
+    target:
+      entity_id: media_player.family_room
+    data:
+      media_content_id: http://homeassistant.local:8123/local/soundscapes/1.wav
+      media_content_type: audio/wav
+  description: ''
+test_play_soundscape_simplified:
+  alias: TEST – Play Soundscape - simplified
+  mode: single
+  sequence:
+  - action: media_player.play_media
+    target:
+      entity_id: media_player.family_room
+    data:
+      media:
+        media_content_id: /local/soundscapes/1.wav
+        media_content_type: music
+  description: ''
