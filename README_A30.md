@@ -1,4 +1,3 @@
-```md
 # A30 Audio Controller – Home Assistant Setup
 
 This document describes how the **A30 audio controller** is wired, configured, and used with Home Assistant in this repo.
