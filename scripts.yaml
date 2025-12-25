@@ -30,13 +30,13 @@ atrium_lights_off_reasoned:
   mode: restart
   fields:
     reason:
-      description: Why the lights were turned off
-      example: No motion (PIR cleared)
+      description: Why the atrium lights were turned off
+      required: true
   sequence:
   - action: input_text.set_value
     data:
       entity_id: input_text.atrium_last_light_reason
-      value: '{{ reason | default(''unknown'') }}'
+      value: '{{ reason }}'
   - action: light.turn_off
     target:
       entity_id: light.wall_dimmer_1
@@ -46,13 +46,13 @@ atrium_lights_off_reasoned:
       entity_id: media_player.family_room
     data:
       volume_level: 0.45
-  - action: tts.speak
+  - action: media_player.play_media
     target:
-      entity_id: tts.google_translate_en_com
+      entity_id: media_player.family_room
     data:
-      media_player_entity_id: media_player.family_room
-      message: "Atrium lights off — {{\n  states('input_text.atrium_last_light_reason')\n
-        \ | default('unknown reason', true)\n}}"
+      media:
+        media_content_id: /local/soundscapes/1.wav
+        media_content_type: music
 test_play_soundscape:
   alias: TEST – Play Soundscape
   mode: single
