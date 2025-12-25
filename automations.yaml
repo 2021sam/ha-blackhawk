@@ -250,15 +250,15 @@
       entity_id: light.bulb_1
   mode: restart
 - id: '1766638033357'
-  alias: TEST – Bulb auto OFF after 10s
+  alias: TEST – Light Bulb auto OFF after 10s
   description: Single-device bulb auto-off test
   triggers:
-  - entity_id: light.bulb_1
+  - entity_id: light.light_1
     to: 'on'
     trigger: state
   actions:
   - delay: 00:00:10
   - target:
-      entity_id: light.bulb_1
+      entity_id: light.light_1
     action: light.turn_off
   mode: restart
