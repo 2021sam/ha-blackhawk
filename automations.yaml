@@ -262,3 +262,16 @@
       entity_id: light.light_1
     action: light.turn_off
   mode: restart
+- id: '1766787951743'
+  alias: TEST – Front Bedroom Light auto OFF after 1 minute
+  description: Single-device light auto-off test
+  triggers:
+  - entity_id: light.wall_dimmer_2
+    to: 'on'
+    trigger: state
+  actions:
+  - delay: 00:01:00
+  - target:
+      entity_id: light.wall_dimmer_2
+    action: light.turn_off
+  mode: restart
