@@ -191,7 +191,7 @@
   - target:
       entity_id: tts.google_translate_en_com
     data:
-      media_player_entity_id: media_player.family_room
+      media_player_entity_id: media_player.amp_1
       message: Motion detected in the Mancave !
     action: tts.speak
   mode: single
