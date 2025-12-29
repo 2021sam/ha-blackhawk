@@ -275,3 +275,91 @@
       entity_id: light.wall_dimmer_2
     action: light.turn_off
   mode: restart
+- id: '1766994022905'
+  alias: PIR → Power Strip ON/OFF (1 min delay) - original atrium
+  description: Turn ON power strip when motion detected, OFF 1 min after clear.
+  triggers:
+  - entity_id: binary_sensor.atrium_pir_occupancy
+    to: 'on'
+    trigger: state
+  - entity_id: binary_sensor.atrium_pir_occupancy
+    to: 'off'
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.atrium_pir_occupancy
+        state: 'on'
+      sequence:
+      - target:
+          entity_id:
+          - switch.atrium_power_switch_1
+          - switch.atrium_power_switch_2
+          - switch.atrium_power_switch_3
+          - switch.atrium_power_switch_4
+          - switch.atrium_power_switch_5
+        action: switch.turn_on
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.atrium_pir_occupancy
+        state: 'off'
+      sequence:
+      - delay: 00:01:00
+      - condition: state
+        entity_id: binary_sensor.atrium_pir_occupancy
+        state: 'off'
+      - target:
+          entity_id:
+          - switch.atrium_power_switch_1
+          - switch.atrium_power_switch_2
+          - switch.atrium_power_switch_3
+          - switch.atrium_power_switch_4
+          - switch.atrium_power_switch_5
+        action: switch.turn_off
+  mode: restart
+- id: '1766995881594'
+  alias: SONOFF PIR → Power Strip ON/OFF (1 min delay)
+  description: Turn ON power strip when motion detected, OFF 1 min after clear.
+  triggers:
+  - entity_id: binary_sensor.sonoff_1_occupancy
+    to: 'on'
+    trigger: state
+  - entity_id: binary_sensor.sonoff_1_occupancy
+    to: 'off'
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: 'on'
+      sequence:
+      - target:
+          entity_id:
+          - switch.power_switch_1_1
+          - switch.power_switch_1_2
+          - switch.power_switch_1_3
+          - switch.power_switch_1_4
+          - switch.power_switch_1_5
+        action: switch.turn_on
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: 'off'
+      sequence:
+      - delay: 00:01:00
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: 'off'
+      - target:
+          entity_id:
+          - switch.power_switch_1_1
+          - switch.power_switch_1_2
+          - switch.power_switch_1_3
+          - switch.power_switch_1_4
+          - switch.power_switch_1_5
+        action: switch.turn_off
+  mode: restart
