@@ -193,3 +193,177 @@ This keeps your “dev workflow” one click away.
 ---
 
 If you want, paste your current `README.md` (or tell me which README you want to update: `README.md` vs `README_Terminal.md`), and I’ll rewrite it cleanly with headings + a tight “Quick Start” block at the top.
+
+
+
+
+---
+Perfect — that’s the right model.
+
+You want:
+
+* **Laurie’s Pi** → push **only** to her own branch
+* You → keep control of `master`
+* New branch: **`deercreek`**
+
+Here’s the **clean, correct, no-surprises sequence**.
+
+---
+
+## Part 1 — You create the `deercreek` branch (once)
+
+Do this from **your machine** (or any machine where you manage the repo).
+
+### 1) Start from a clean `master`
+
+```bash
+git checkout master
+git pull --rebase origin master
+```
+
+### 2) Create the new branch
+
+```bash
+git checkout -b deercreek
+```
+
+At this point:
+
+* `deercreek` = exact copy of `master`
+
+### 3) Push it to GitHub
+
+```bash
+git push -u origin deercreek
+```
+
+That’s it. The branch now exists remotely.
+
+---
+
+## Part 2 — Point Laurie’s Pi at `deercreek`
+
+On **Laurie’s Pi**:
+
+### 1) Fetch new branches
+
+```bash
+cd /homeassistant
+git fetch origin
+```
+
+### 2) Switch to the `deercreek` branch
+
+```bash
+git checkout deercreek
+```
+
+If Git says the branch doesn’t exist locally yet, use:
+
+```bash
+git checkout -b deercreek origin/deercreek
+```
+
+### 3) Set upstream tracking (important)
+
+```bash
+git branch --set-upstream-to=origin/deercreek
+```
+
+Verify:
+
+```bash
+git status
+```
+
+You should see:
+
+```
+On branch deercreek
+Your branch is up to date with 'origin/deercreek'.
+```
+
+---
+
+## Part 3 — Laurie’s normal workflow (simple)
+
+From now on, **on Laurie’s Pi**:
+
+### Pull updates
+
+```bash
+git pull --rebase
+```
+
+### Make changes (YAML edits, tests, etc.)
+
+```bash
+git add automations.yaml
+git commit -m "deercreek: adjust patio light timing"
+git push
+```
+
+She will:
+
+* ✅ push only to `deercreek`
+* ❌ never touch `master`
+* ❌ never affect other locations
+
+---
+
+## Part 4 — Your workflow (promote changes safely)
+
+When you want to bring something from `deercreek` → `master`:
+
+```bash
+git checkout master
+git pull --rebase origin master
+git cherry-pick <commit_hash_from_deercreek>
+git push
+```
+
+No merges, no pollution, no surprises.
+
+---
+
+## One critical rule (write this in the README)
+
+> **Never commit directly to `master`.**
+> Location machines commit only to their own branch (`deercreek`, `blackhawk`, etc.).
+
+---
+
+## After branch switches on Laurie’s Pi
+
+Always:
+
+* Click **Reload Automations** (`automation.reload`)
+* Or if anything looks off: `ha core restart`
+
+---
+
+## Final sanity check (optional)
+
+On Laurie’s Pi:
+
+```bash
+git branch -vv
+```
+
+You should see:
+
+```
+* deercreek  abc1234 [origin/deercreek]
+  master     xyz5678 [origin/master]
+```
+
+---
+
+If you want, next I can:
+
+* add a **branch policy section** to your README
+* give Laurie a **“safe daily checklist”**
+* or lock `master` against accidental pushes
+
+You’re setting this up the *right* way.
+
