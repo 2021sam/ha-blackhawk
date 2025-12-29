@@ -1,5 +1,3 @@
----
-
 # Advanced SSH & Web Terminal – Setup & Usage
 
 This project uses **Home Assistant OS** with the **Advanced SSH & Web Terminal** add-on for terminal access, SSH, and file transfer (SCP).
@@ -154,3 +152,14 @@ These are **Supervisor-managed**.
 
 ---
 
+
+## tmux Scrollback (Important)
+
+The Advanced SSH & Web Terminal starts inside **tmux**.  
+By default, mouse scrolling only scrolls command history, not terminal output.
+
+### Enable mouse scrolling (required)
+Run once in the terminal:
+
+```bash
+tmux set -g mouse on
