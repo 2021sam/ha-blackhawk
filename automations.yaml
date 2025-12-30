@@ -33,14 +33,14 @@
     action: light.turn_off
   mode: restart
 - id: '1767050394149'
-  alias: Patio Light Bulb auto OFF after 10s
+  alias: Patio Light Bulb auto OFF after 5 minutes
   description: Single-device bulb auto-off test
   triggers:
   - entity_id: light.light_1
     to: 'on'
     trigger: state
   actions:
-  - delay: 00:00:10
+  - delay: 00:05:00
   - target:
       entity_id: light.light_1
     action: light.turn_off
