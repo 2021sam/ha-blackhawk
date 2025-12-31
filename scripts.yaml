@@ -105,54 +105,6 @@ reload_automations:
   sequence:
   - action: automation.reload
   description: ''
-test_speak_last_notification_text_1:
-  alias: TEST – Speak LAST notification text - 1
-  mode: single
-  sequence:
-  - action: media_player.volume_mute
-    target:
-      entity_id: media_player.amp_1
-    data:
-      is_volume_muted: false
-  - action: media_player.volume_set
-    target:
-      entity_id: media_player.amp_1
-    data:
-      volume_level: 0.6
-  - action: tts.speak
-    target:
-      entity_id: tts.google_translate_en_com
-    data:
-      media_player_entity_id: media_player.amp_1
-      message: '{{ state_attr(''sensor.lm_q710_fgn_last_notification'', ''android'').text
-        }}
-
-        '
-  description: ''
-test_speak_last_notification_text_fallback_2:
-  alias: TEST – Speak LAST notification text (fallback) - 2
-  mode: single
-  sequence:
-  - action: media_player.volume_mute
-    target:
-      entity_id: media_player.amp_1
-    data:
-      is_volume_muted: false
-  - action: media_player.volume_set
-    target:
-      entity_id: media_player.amp_1
-    data:
-      volume_level: 0.6
-  - action: tts.speak
-    target:
-      entity_id: tts.google_translate_en_com
-    data:
-      media_player_entity_id: media_player.amp_1
-      message: '{{ state_attr(''sensor.lm_q710_fgn_last_notification'', ''text'')
-        }}
-
-        '
-  description: ''
 speak_last_google_voice_message_2:
   alias: Speak last Google Voice message - 2 - Success
   mode: single
@@ -186,7 +138,7 @@ speak_last_google_voice_message_with_sender_3:
     action: tts.speak
   description: ''
 speak_last_item_from_android_messages_4:
-  alias: Speak last item from android.messages - 4
+  alias: Speak last item from android.messages - 4 - Success
   mode: single
   sequence:
   - variables:
@@ -203,7 +155,7 @@ speak_last_item_from_android_messages_4:
     action: tts.speak
   description: ''
 speak_last_google_voice_message_with_sender_5:
-  alias: Speak last Google Voice message with sender - 5 - Success
+  alias: TEST - Automations solution - Speak Title & Text - 5 - Success
   mode: single
   sequence:
   - variables:
@@ -218,4 +170,4 @@ speak_last_google_voice_message_with_sender_5:
       media_player_entity_id: media_player.amp_1
       message: '{{ msg }}'
     action: tts.speak
-  description: ''
+  description: This solution is used in the Automations
