@@ -82,9 +82,6 @@
     data:
       value: '{{ pt }}'
     action: input_text.set_value
-<<<<<<< HEAD
-  mode: single
-=======
   mode: single
 - id: '1767221347387'
   alias: Deercreek - PIR → Power Strip - TTS & Soundscape
@@ -233,4 +230,3 @@
           - switch.power_switch_1_5
         action: switch.turn_off
   mode: restart
->>>>>>> blackhawk
