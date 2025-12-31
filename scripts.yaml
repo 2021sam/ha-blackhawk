@@ -170,8 +170,4 @@ speak_last_google_voice_message_with_sender_5:
       media_player_entity_id: media_player.amp_1
       message: '{{ msg }}'
     action: tts.speak
-<<<<<<< HEAD
   description: This solution is used in the Automations
-=======
-  description: This solution is used in the Automations
->>>>>>> blackhawk
