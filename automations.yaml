@@ -82,4 +82,155 @@
     data:
       value: '{{ pt }}'
     action: input_text.set_value
+<<<<<<< HEAD
   mode: single
+=======
+  mode: single
+- id: '1767221347387'
+  alias: Deercreek - PIR → Power Strip - TTS & Soundscape
+  description: Turn ON power strip when motion detected, OFF 1 min after clear. TTS
+    on ON, sound on OFF.
+  triggers:
+  - entity_id: binary_sensor.sonoff_1_occupancy
+    to: 'on'
+    trigger: state
+  - entity_id: binary_sensor.sonoff_1_occupancy
+    to: 'off'
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: 'on'
+      sequence:
+      - target:
+          entity_id:
+          - switch.power_switch_1_1
+          - switch.power_switch_1_2
+          - switch.power_switch_1_3
+          - switch.power_switch_1_4
+          - switch.power_switch_1_5
+        action: switch.turn_on
+      - target:
+          entity_id: tts.google_translate_en_com
+        data:
+          media_player_entity_id: media_player.amp_1
+          message: Motion detected.
+        action: tts.speak
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: 'off'
+      sequence:
+      - delay: 00:01:00
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: 'off'
+      - target:
+          entity_id: media_player.amp_1
+        data:
+          media:
+            media_content_id: /local/soundscapes/1.wav
+            media_content_type: music
+            metadata: {}
+        action: media_player.play_media
+      - target:
+          entity_id:
+          - switch.power_switch_1_1
+          - switch.power_switch_1_2
+          - switch.power_switch_1_3
+          - switch.power_switch_1_4
+          - switch.power_switch_1_5
+        action: switch.turn_off
+  mode: restart
+- id: '1767221486341'
+  alias: Deercreek - PIR → Power Strip - original atrium
+  description: Turn ON power strip when motion detected, OFF 1 min after clear.
+  triggers:
+  - entity_id: binary_sensor.atrium_pir_occupancy
+    to: 'on'
+    trigger: state
+  - entity_id: binary_sensor.atrium_pir_occupancy
+    to: 'off'
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.atrium_pir_occupancy
+        state: 'on'
+      sequence:
+      - target:
+          entity_id:
+          - switch.atrium_power_switch_1
+          - switch.atrium_power_switch_2
+          - switch.atrium_power_switch_3
+          - switch.atrium_power_switch_4
+          - switch.atrium_power_switch_5
+        action: switch.turn_on
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.atrium_pir_occupancy
+        state: 'off'
+      sequence:
+      - delay: 00:01:00
+      - condition: state
+        entity_id: binary_sensor.atrium_pir_occupancy
+        state: 'off'
+      - target:
+          entity_id:
+          - switch.atrium_power_switch_1
+          - switch.atrium_power_switch_2
+          - switch.atrium_power_switch_3
+          - switch.atrium_power_switch_4
+          - switch.atrium_power_switch_5
+        action: switch.turn_off
+  mode: restart
+- id: '1767221653083'
+  alias: Deercreek - PIR → Power Strip
+  description: Turn ON power strip when motion detected, OFF 1 min after clear.
+  triggers:
+  - entity_id: binary_sensor.sonoff_1_occupancy
+    to: 'on'
+    trigger: state
+  - entity_id: binary_sensor.sonoff_1_occupancy
+    to: 'off'
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: 'on'
+      sequence:
+      - target:
+          entity_id:
+          - switch.power_switch_1_1
+          - switch.power_switch_1_2
+          - switch.power_switch_1_3
+          - switch.power_switch_1_4
+          - switch.power_switch_1_5
+        action: switch.turn_on
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: 'off'
+      sequence:
+      - delay: 00:01:00
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: 'off'
+      - target:
+          entity_id:
+          - switch.power_switch_1_1
+          - switch.power_switch_1_2
+          - switch.power_switch_1_3
+          - switch.power_switch_1_4
+          - switch.power_switch_1_5
+        action: switch.turn_off
+  mode: restart
+>>>>>>> blackhawk
