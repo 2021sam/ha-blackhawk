@@ -45,44 +45,6 @@
       entity_id: light.light_1
     action: light.turn_off
   mode: restart
-- id: '1767164503089'
-  alias: TTS – Speak Google Voice last notification (title + text) - 9
-  description: Speak Google Voice notifications via TTS on amp_1
-  triggers:
-  - entity_id: sensor.lm_q710_fgn_last_notification
-    trigger: state
-  conditions:
-  - condition: template
-    value_template: '{{ state_attr(''sensor.lm_q710_fgn_last_notification'',''package'')
-      == ''com.google.android.apps.googlevoice'' }}'
-  - condition: template
-    value_template: "{{\n  (state_attr('sensor.lm_q710_fgn_last_notification','android.title')
-      or '')|string|length > 0\n  or\n  (state_attr('sensor.lm_q710_fgn_last_notification','android.text')
-      or '')|string|length > 0\n}}"
-  - condition: template
-    value_template: "{{\n  (state_attr('sensor.lm_q710_fgn_last_notification','post_time')
-      | string)\n  !=\n  (state_attr('sensor.lm_q710_fgn_last_notification','post_time_last_spoken')
-      | string)\n}}"
-  actions:
-  - variables:
-      n: sensor.lm_q710_fgn_last_notification
-      who: '{{ (state_attr(n,''android.title'') or ''Message'') | string }}'
-      txt: '{{ (state_attr(n,''android.text'') or '''') | string }}'
-      msg: '{{ (who ~ '': '' ~ txt) if txt|length > 0 else (who ~ '': (no text)'')
-        }}'
-      pt: '{{ (state_attr(n,''post_time'') or now().timestamp()|int) }}'
-  - target:
-      entity_id: tts.google_translate_en_com
-    data:
-      media_player_entity_id: media_player.amp_1
-      message: '{{ msg }}'
-    action: tts.speak
-  - target:
-      entity_id: input_text.last_google_voice_post_time_spoken
-    data:
-      value: '{{ pt }}'
-    action: input_text.set_value
-  mode: single
 - id: '1767221347387'
   alias: Deercreek - PIR → Power Strip - TTS & Soundscape
   description: Turn ON power strip when motion detected, OFF 1 min after clear. TTS
@@ -186,46 +148,8 @@
           - switch.power_1_switch_5
         action: switch.turn_off
   mode: restart
-- id: '1767252268569'
-  alias: Deercreek - TTS – Speak Google Voice last notification (title + text) - Enable
-  description: Speak Google Voice notifications via TTS on amp_1
-  triggers:
-  - entity_id: sensor.sm_g965u_last_notification
-    trigger: state
-  conditions:
-  - condition: template
-    value_template: '{{ state_attr(''sensor.sm_g965u_last_notification'',''package'')
-      == ''com.google.android.apps.googlevoice'' }}'
-  - condition: template
-    value_template: "{{\n  (state_attr('sensor.sm_g965u_last_notification','android.title')
-      or '')|string|length > 0\n  or\n  (state_attr('sensor.sm_g965u_last_notification','android.text')
-      or '')|string|length > 0\n}}"
-  - condition: template
-    value_template: "{{\n  (state_attr('sensor.sm_g965u_last_notification','post_time')
-      | string)\n  !=\n  (state_attr('sensor.sm_g965u_last_notification','post_time_last_spoken')
-      | string)\n}}"
-  actions:
-  - variables:
-      n: sensor.sm_g965u_last_notification
-      who: '{{ (state_attr(n,''android.title'') or ''Message'') | string }}'
-      txt: '{{ (state_attr(n,''android.text'') or '''') | string }}'
-      msg: '{{ (who ~ '': '' ~ txt) if txt|length > 0 else (who ~ '': (no text)'')
-        }}'
-      pt: '{{ (state_attr(n,''post_time'') or now().timestamp()|int) }}'
-  - target:
-      entity_id: tts.google_translate_en_com
-    data:
-      media_player_entity_id: media_player.amp_1
-      message: '{{ msg }}'
-    action: tts.speak
-  - target:
-      entity_id: input_text.last_google_voice_post_time_spoken
-    data:
-      value: '{{ pt }}'
-    action: input_text.set_value
-  mode: single
 - id: '1767258109835'
-  alias: Deercreek - TTS Alert - Samsung power state changed - Enable
+  alias: Deercreek - TTS Alert - Samsung power state changed
   description: Speak when Samsung HA phone is plugged in or unplugged
   triggers:
   - entity_id: binary_sensor.sm_g965u_is_charging
@@ -322,15 +246,19 @@
         target:
           entity_id: timer.audio_cooldown
   mode: restart
-- id: '1767304581815'
-  alias: Deercreek - TTS – Speak Google Voice last notification (title + text) - Enable
-  description: Speak Google Voice notifications via TTS on amp_1
+- id: '1767307551834'
+  alias: Deercreek - TTS – Speak Google Voice last notification (Multi-phone)
+  description: 'Speak Google Voice notifications via TTS on amp_1.
+
+    Phones: - Blackhawk: sensor.lm_q710_fgn_last_notification - Deercreek: sensor.sm_g965u_last_notification
+
+    '
   triggers:
   - entity_id: sensor.sm_g965u_last_notification
     trigger: state
   conditions:
   - condition: template
-    value_template: '{{ state_attr(n, ''package'') == ''com.google.android.apps.googlevoice''
+    value_template: '{{ state_attr(n,''package'') == ''com.google.android.apps.googlevoice''
       }}
 
       '
@@ -338,63 +266,28 @@
     value_template: "{{\n  (state_attr(n,'android.title') or '') | length > 0\n  or\n
       \ (state_attr(n,'android.text') or '') | length > 0\n}}\n"
   - condition: template
-    value_template: "{{\n  (state_attr(n,'post_time') | string)\n  !=\n  (states('input_text.last_google_voice_post_time_spoken'))\n}}\n"
+    value_template: "{{\n  (state_attr(n,'post_time') | string)\n  !=\n  states('input_text.last_google_voice_post_time_spoken')\n}}\n"
   actions:
   - variables:
       who: '{{ state_attr(n,''android.title'') or ''Message'' }}'
       txt: '{{ state_attr(n,''android.text'') or '''' }}'
       msg: '{{ who ~ '': '' ~ txt if txt|length > 0 else who ~ '': (no text)'' }}'
       pt: '{{ state_attr(n,''post_time'') or now().timestamp() | int }}'
-  - action: tts.speak
-    target:
+  - target:
       entity_id: tts.google_translate_en_com
     data:
       media_player_entity_id: media_player.amp_1
       message: '{{ msg }}'
-  - action: input_text.set_value
-    target:
+    action: tts.speak
+  - target:
       entity_id: input_text.last_google_voice_post_time_spoken
     data:
       value: '{{ pt }}'
+    action: input_text.set_value
   mode: single
   variables:
-    phone_sensor: sensor.sm_g965u_last_notification
-    n: '{{ phone_sensor }}'
-- id: '1767305003994'
-  alias: Deercreek - TTS – Speak Google Voice last notification (Variables) - Enable
-  description: Speak Google Voice notifications via TTS on amp_1
-  triggers:
-  - entity_id: sensor.sm_g965u_last_notification
-    trigger: state
-  conditions:
-  - condition: template
-    value_template: '{{ state_attr(n, ''package'') == ''com.google.android.apps.googlevoice''
-      }}
-
-      '
-  - condition: template
-    value_template: "{{\n  (state_attr(n,'android.title') or '') | length > 0\n  or\n
-      \ (state_attr(n,'android.text') or '') | length > 0\n}}\n"
-  - condition: template
-    value_template: "{{\n  (state_attr(n,'post_time') | string)\n  !=\n  (states('input_text.last_google_voice_post_time_spoken'))\n}}\n"
-  actions:
-  - variables:
-      who: '{{ state_attr(n,''android.title'') or ''Message'' }}'
-      txt: '{{ state_attr(n,''android.text'') or '''' }}'
-      msg: '{{ who ~ '': '' ~ txt if txt|length > 0 else who ~ '': (no text)'' }}'
-      pt: '{{ state_attr(n,''post_time'') or now().timestamp() | int }}'
-  - action: tts.speak
-    target:
-      entity_id: tts.google_translate_en_com
-    data:
-      media_player_entity_id: media_player.amp_1
-      message: '{{ msg }}'
-  - action: input_text.set_value
-    target:
-      entity_id: input_text.last_google_voice_post_time_spoken
-    data:
-      value: '{{ pt }}'
-  mode: single
-  variables:
-    phone_sensor: sensor.sm_g965u_last_notification
-    n: '{{ phone_sensor }}'
+    phones:
+      blackhawk: sensor.lm_q710_fgn_last_notification
+      deercreek: sensor.sm_g965u_last_notification
+    phone: '{{ phones.deercreek }}'
+    n: '{{ phone }}'
