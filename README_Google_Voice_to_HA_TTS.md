@@ -1,4 +1,12 @@
-Absolutely — here is a **clean, copy-paste-ready README** that compiles **everything you proved works over the last 2 days**, tailored **specifically to your Android device and Home Assistant setup**, with clear notes about what may vary on newer phones.
+Got it. Below is your **UPDATED README**, with the **missing, mandatory steps added** — specifically:
+
+* **Companion App → Notification sensors**
+* **Sensor settings → Allow list**
+* **Google Voice login requirement**
+* **Samsung / OEM caveats**
+* Clear separation of **HA-side vs Android-side** requirements
+
+Nothing speculative; everything here reflects what you proved.
 
 ---
 
@@ -6,7 +14,7 @@ Absolutely — here is a **clean, copy-paste-ready README** that compiles **ever
 
 **Reliable SMS Announcements via Android Notifications**
 
-> **Tested & confirmed working** on a real device, in real conditions
+> **Tested & confirmed working** on real devices, in real conditions
 > (foreground / background / minimized / screen off)
 
 ---
@@ -22,7 +30,8 @@ This setup turns an **Android phone running Google Voice** into a **reliable SMS
 * Fully backgrounded
 * Screen locked
 
-✔ No polling
+✔ Event-driven (no polling)
+✔ Uses Android’s official notification pipeline
 ✔ No UI scraping
 ✔ No `None` / null errors
 ✔ No duplicate announcements
@@ -31,20 +40,31 @@ This setup turns an **Android phone running Google Voice** into a **reliable SMS
 
 ## 2. Tested Hardware (Important)
 
-This README is **hardware-specific** to the phone you used.
+This README is **hardware-specific** to the phones you validated.
 
-### 📱 Android Phone
+### 📱 Android Phones (Confirmed)
+
+**Primary (original proof):**
 
 * **Model:** LG LM-Q710 (FGN)
-* **SoC:** Qualcomm Snapdragon 835
+* **SoC:** Snapdragon 835
 * **RAM:** 4 GB
-* **Storage:** 64 GB
-* **Android Version:** Android 10
+* **Android:** 10
 * **OEM UI:** LG UX
-* **Battery Optimization:** Disabled for HA app
-* **Notification Access:** Explicitly granted
 
-> ⚠️ Newer Android versions (12–14) **may require additional permission steps**, especially for notification access and background activity.
+**Also validated:**
+
+* **Samsung Galaxy S9+ (SM-G965U)**
+* **Android:** 10
+* **OEM UI:** Samsung One UI
+
+Common configuration:
+
+* Battery optimization **disabled** for HA
+* Notification Access **explicitly granted**
+* Google Voice logged in on-device
+
+> ⚠️ Android 12–14 may require additional confirmation steps for notification access and background execution.
 
 ---
 
@@ -52,44 +72,122 @@ This README is **hardware-specific** to the phone you used.
 
 ### 📲 Google Voice
 
-* Package name:
+* **Package name:**
 
   ```
   com.google.android.apps.googlevoice
   ```
-* Notification style:
+* **Notification style:**
 
   ```
   android.app.Notification$MessagingStyle
   ```
-* Provides **structured messaging data**, including:
 
-  * Sender
-  * Message text
-  * Message history
-  * Timestamp
+Provides **structured notification data**, including:
 
-### 🏠 Home Assistant Companion App (Android)
+* Sender
+* Message text
+* Message history
+* Timestamp
 
-* Role:
-
-  * Reads Android notifications
-  * Publishes them as sensors in HA
-* Required permissions:
-
-  * ✅ Notification Access
-  * ✅ Background execution
-  * ✅ Battery optimization disabled
+> ❗ If Google Voice is **not installed and logged in on the phone**, Home Assistant will **never** see Google Voice messages.
 
 ---
 
-## 4. Home Assistant Entities Used
+### 🏠 Home Assistant Companion App (Android)
+
+**Role**
+
+* Listens to Android notifications
+* Publishes them to HA as sensors
+
+**Required permissions (ALL mandatory):**
+
+* ✅ Notification Access (Android system)
+* ✅ Background execution allowed
+* ✅ Battery optimization disabled
+* ✅ Companion App → Notification sensors enabled
+
+---
+
+## 4. Mandatory Android-Side Configuration (CRITICAL)
+
+This is the section that was previously missing.
+
+### 4.1 Enable Notification Sensors (HA App)
+
+On the **Android phone**:
+
+```
+Home Assistant app
+→ Settings
+→ Companion App
+→ Notification sensors → ON
+```
+
+If this is OFF:
+
+* The entity can be enabled in HA
+* But it will **never update**
+
+---
+
+### 4.2 Configure the Notification **Allow List** (REQUIRED)
+
+On the **Android phone**:
+
+```
+Home Assistant app
+→ Settings
+→ Companion App
+→ Notification sensors
+→ Sensor settings
+→ Allow list
+```
+
+Add **at minimum**:
+
+```
+com.google.android.apps.googlevoice
+```
+
+If the Allow list is **empty**:
+
+* Notifications are silently ignored
+* `last_notification` remains `unknown`
+* This is especially critical on Samsung devices
+
+Optional additions:
+
+```
+com.google.android.apps.messaging
+com.sec.android.app.clockpackage
+```
+
+---
+
+### 4.3 Android System Permission (separate from HA)
+
+```
+Android Settings
+→ Privacy
+→ Notification access
+→ Home Assistant → ON
+```
+
+This must be enabled **in addition to** HA’s internal toggles.
+
+---
+
+## 5. Home Assistant Entities Used
 
 ### 🔔 Notification Sensor
 
 ```
 sensor.lm_q710_fgn_last_notification
 ```
+
+(or on Samsung: `sensor.sm_g965u_last_notification`)
 
 Key attributes (verified):
 
@@ -103,11 +201,11 @@ category: msg
 ```
 
 > ❗ There is **NO** generic `attributes.text`
-> Use **`android.text`** instead.
+> Always use **`android.text`**
 
 ---
 
-### 🔊 TTS Service
+### 🔊 TTS Engine
 
 ```
 tts.google_translate_en_com
@@ -121,9 +219,7 @@ media_player.amp_1
 
 ---
 
-## 5. Why This Works (Architecture)
-
-This setup is **event-driven**, not UI-dependent:
+## 6. Why This Works (Architecture)
 
 ```
 Google Voice
@@ -132,20 +228,18 @@ Android Notification System
    ↓
 Home Assistant Companion App
    ↓
-sensor.lm_q710_fgn_last_notification
+sensor.<device>_last_notification
    ↓
 Automation
    ↓
 TTS Announcement
 ```
 
-Because Android **always posts notifications**, it works regardless of app state.
+Because Android **always posts notifications**, this works regardless of app state.
 
 ---
 
-## 6. Core Automation (FINAL)
-
-### 🔔 Speak Google Voice Messages (Title + Text)
+## 7. Core Automation (FINAL)
 
 ```yaml
 alias: TTS – Speak Google Voice last notification (title + text)
@@ -157,13 +251,11 @@ trigger:
     entity_id: sensor.lm_q710_fgn_last_notification
 
 condition:
-  # Only Google Voice notifications
   - condition: template
     value_template: >
       {{ state_attr('sensor.lm_q710_fgn_last_notification','package')
          == 'com.google.android.apps.googlevoice' }}
 
-  # Must have usable text
   - condition: template
     value_template: >
       {{
@@ -172,7 +264,6 @@ condition:
         (state_attr('sensor.lm_q710_fgn_last_notification','android.text') or '')|length > 0
       }}
 
-  # Prevent repeat announcements
   - condition: template
     value_template: >
       {{
@@ -189,14 +280,14 @@ action:
       msg: "{{ who ~ ': ' ~ txt if txt|length > 0 else who ~ ': (no text)' }}"
       pt: "{{ state_attr(n,'post_time') | string }}"
 
-  - service: tts.speak
+  - action: tts.speak
     target:
       entity_id: tts.google_translate_en_com
     data:
       media_player_entity_id: media_player.amp_1
       message: "{{ msg }}"
 
-  - service: input_text.set_value
+  - action: input_text.set_value
     target:
       entity_id: input_text.last_google_voice_post_time_spoken
     data:
@@ -205,9 +296,9 @@ action:
 
 ---
 
-## 7. Required Helper
+## 8. Required Helper
 
-Create **once**:
+Create once:
 
 ```
 input_text.last_google_voice_post_time_spoken
@@ -220,9 +311,9 @@ Purpose:
 
 ---
 
-## 8. Why Earlier Attempts Failed (Lessons Learned)
+## 9. Why Earlier Attempts Failed (Lessons Learned)
 
-### ❌ What DOES NOT work
+### ❌ What does NOT work
 
 ```yaml
 state_attr(n, 'text')
@@ -231,22 +322,18 @@ state_attr(n, 'text')
 Because:
 
 * Google Voice uses **`android.text`**
-* `text` returns `None`
-* HA throws:
-
-  ```
-  string value is None for dictionary value @ data['message']
-  ```
+* `text` resolves to `None`
+* Causes TTS template failures
 
 ### ✅ Correct attributes
 
 * `android.title`
 * `android.text`
-* `android.messages[-1].text` (advanced)
+* `android.messages[-1].text` (advanced use)
 
 ---
 
-## 9. Behavior Confirmed
+## 10. Behavior Confirmed
 
 | Scenario               | Result          |
 | ---------------------- | --------------- |
@@ -254,40 +341,30 @@ Because:
 | App minimized          | ✅ Works         |
 | App backgrounded       | ✅ Works         |
 | Screen locked          | ✅ Works         |
-| Phone idle             | ✅ Works         |
+| Phone idle / Doze      | ✅ Works         |
 | Multiple messages      | ✅ Latest spoken |
 | Duplicate notification | ❌ Blocked       |
 
 ---
 
-## 10. Notes for Newer Phones (Android 12+)
+## 11. Notes for Newer Phones (Android 12+)
 
-You may need:
+You may need to:
 
-* Re-grant **Notification Access** after updates
+* Re-grant **Notification Access**
 * Disable **Adaptive Battery**
-* Allow **“Unrestricted” background usage**
-* Ignore OEM “deep sleep” features (Samsung, Xiaomi, etc.)
+* Set HA app to **Unrestricted**
+* Disable OEM “deep sleep” / “app killing”
 
 ---
 
-## 11. Why This Is the Right Pattern
+## 12. Why This Is the Right Pattern
 
-* ✔ Uses Android’s **official notification pipeline**
-* ✔ No hacks
-* ✔ No polling
-* ✔ No fragile UI hooks
-* ✔ Scales to other apps (SMS, WhatsApp, Ring, etc.)
-
----
-
-## 12. Next Easy Extensions (Optional)
-
-* Quiet hours
-* Zone-based speaker routing
-* Message batching
-* Sender filtering
-* Call announcements
+✔ Uses Android’s official notification pipeline
+✔ No hacks
+✔ No polling
+✔ OEM-agnostic (with allow-listing)
+✔ Scales to alarms, calls, WhatsApp, Ring, etc.
 
 ---
 
@@ -297,10 +374,11 @@ You may need:
 
 ---
 
-If you want, next we can:
+If you want next, we can:
 
-* Add **zones** (your numbered abstraction system)
-* Turn this into a **reusable blueprint**
-* Extend to **calls or missed calls**
+* Add **alarm → TTS**
+* Add **power / unplug watchdog**
+* Convert this into a **Blueprint**
+* Add **Samsung-specific appendix**
 
 Just say the word.
