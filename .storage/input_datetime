@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "minor_version": 2,
+  "key": "input_datetime",
+  "data": {
+    "items": [
+      {
+        "id": "last_motion_time",
+        "name": "Last Motion Time",
+        "has_date": true,
+        "icon": "mdi:motion-sensor",
+        "has_time": true
+      }
+    ]
+  }
+}
