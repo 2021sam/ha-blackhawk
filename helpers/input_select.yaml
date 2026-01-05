@@ -3,3 +3,15 @@ target_light_1:
   name: Target Light 1
   options:
     - light.wall_dimmer_1
+    - light.wall_dimmer_2
+    - light.light_1
+    - light.light_2
+
+
+target_light_2:
+  name: Target Light 2
+  options:
+    - light.wall_dimmer_1
+    - light.wall_dimmer_2
+    - light.light_1
+    - light.light_2

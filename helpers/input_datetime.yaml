@@ -1,0 +1,9 @@
+last_motion_time_1:
+  name: Last Motion Time 1
+  has_date: true
+  has_time: true
+
+last_motion_time_2:
+  name: Last Motion Time 2
+  has_date: true
+  has_time: true
