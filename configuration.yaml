@@ -12,3 +12,5 @@ scene: !include scenes.yaml
 
 input_select: !include helpers/input_select.yaml
 group: !include helpers/group.yaml
+input_datetime: !include helpers/input_datetime.yaml
+timer: !include helpers/timer.yaml
