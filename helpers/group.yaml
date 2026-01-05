@@ -1,0 +1,9 @@
+# helpers/group.yaml
+power_strip_1:
+  name: Power Strip 1
+  entities:
+    - switch.power_1_switch_1
+    - switch.power_1_switch_2
+    - switch.power_1_switch_3
+    - switch.power_1_switch_4
+    - switch.power_1_switch_5

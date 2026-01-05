@@ -1,0 +1,5 @@
+# helpers/input_select.yaml
+target_light_1:
+  name: Target Light 1
+  options:
+    - light.wall_dimmer_1

@@ -24,10 +24,10 @@ _backup_*/
 
 # Block all HA runtime storage
 #.config/.storage/*
-.storage/*
+# .storage/*
 
 # Allow ONLY the helpers file we want
-!/root/homeassistant/.storage/input_datetime
-!.storage/input_datetime
-!input_datetime
+#!/root/homeassistant/.storage/input_datetime
+#!.storage/input_datetime
+#!input_datetime
 
