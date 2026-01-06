@@ -652,3 +652,106 @@
     prev_fmt: "{% if prev_ts is not none %}\n  {{ (prev_ts | float) | timestamp_custom('%-I:%M
       %p', true) }}\n{% else %}\n  no previous time saved\n{% endif %}"
   mode: restart
+- id: '1767666156083'
+  alias: PIR → Light + Power Strip Group + Previous Motion TTS + Cooldown - Whole
+    Home
+  description: 'Motion ON: turn ON target light (from helper) + turn ON group.power_strip_1,
+    speak the PREVIOUS motion time only if cooldown timer is idle, then update input_datetime.last_motion_time_1
+    to now, and start cooldown if we spoke. Motion OFF: play WAV only if cooldown
+    is idle, turn OFF target light + power strip, and start cooldown if we played.
+
+    '
+  triggers:
+  - entity_id: binary_sensor.sonoff_1_occupancy
+    trigger: state
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: 'on'
+      sequence:
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ target_light not in [''unknown'',''unavailable'',''none'','''']
+              }}'
+          sequence:
+          - target:
+              entity_id: '{{ target_light }}'
+            action: light.turn_on
+      - target:
+          entity_id: group.power_strip_1
+        action: homeassistant.turn_on
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: timer.audio_cooldown_1
+            state: idle
+          - condition: template
+            value_template: '{{ audio_target not in [''unknown'',''unavailable'',''none'','''']
+              }}'
+          sequence:
+          - target:
+              entity_id: tts.google_translate_en_com
+            data:
+              media_player_entity_id: '{{ audio_target }}'
+              message: "{% if prev_ts is not none %}\n  Previous motion was at {{
+                prev_fmt }}.\n{% else %}\n  No previous motion time saved yet.\n{%
+                endif %}"
+            action: tts.speak
+          - target:
+              entity_id: timer.audio_cooldown_1
+            action: timer.start
+      - target:
+          entity_id: input_datetime.last_motion_time_1
+        data:
+          date: '{{ now().strftime(''%Y-%m-%d'') }}'
+          time: '{{ now().strftime(''%H:%M:%S'') }}'
+        action: input_datetime.set_datetime
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: 'off'
+      sequence:
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: timer.audio_cooldown_1
+            state: idle
+          - condition: template
+            value_template: '{{ audio_target not in [''unknown'',''unavailable'',''none'','''']
+              }}'
+          sequence:
+          - target:
+              entity_id: '{{ audio_target }}'
+            data:
+              media:
+                media_content_id: /local/soundscapes/1.wav
+                media_content_type: music
+                metadata: {}
+            action: media_player.play_media
+          - target:
+              entity_id: timer.audio_cooldown_1
+            action: timer.start
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ target_light not in [''unknown'',''unavailable'',''none'','''']
+              }}'
+          sequence:
+          - target:
+              entity_id: '{{ target_light }}'
+            action: light.turn_off
+      - target:
+          entity_id: group.power_strip_1
+        action: homeassistant.turn_off
+  variables:
+    target_light: '{{ states(''input_select.target_light_1'') }}'
+    audio_target: '{{ states(''input_select.audio_target_1'') }}'
+    prev_ts: "{% set s = states('input_datetime.last_motion_time_1') %} {% if s not
+      in ['unknown','unavailable','none',''] %}\n  {{ as_timestamp(s) }}\n{% else
+      %}\n  {{ none }}\n{% endif %}"
+    prev_fmt: "{% if prev_ts is not none %}\n  {{ (prev_ts | float) | timestamp_custom('%-I:%M
+      %p', true) }}\n{% else %}\n  no previous time saved\n{% endif %}"
+  mode: restart
