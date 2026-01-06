@@ -7,3 +7,10 @@ power_strip_1:
     - switch.power_1_switch_3
     - switch.power_1_switch_4
     - switch.power_1_switch_5
+
+
+whole_home_audio:
+  name: Whole Home Audio
+  entities:
+    - media_player.amp_1   # Downstairs A30
+    - media_player.amp_2   # Upstairs A30

@@ -15,3 +15,11 @@ target_light_2:
     - light.wall_dimmer_2
     - light.light_1
     - light.light_2
+
+
+audio_target_1:
+  name: Audio Output
+  options:
+    - media_player.whole_home_audio
+    - media_player.amp_1
+    - media_player.amp_2
