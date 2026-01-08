@@ -54,7 +54,7 @@ atrium_lights_off_reasoned:
         media_content_id: /local/soundscapes/1.wav
         media_content_type: music
 test_play_soundscape:
-  alias: TEST – Play Soundscape
+  alias: TEST – Play Soundscape - amp 1
   mode: single
   sequence:
   - target:
@@ -67,12 +67,12 @@ test_play_soundscape:
     action: media_player.play_media
   description: ''
 test_play_soundscape_simplified:
-  alias: TEST – Play Soundscape - simplified
+  alias: TEST – Play Soundscape - simplified - amp 2
   mode: single
   sequence:
   - action: media_player.play_media
     target:
-      entity_id: media_player.amp_1
+      entity_id: media_player.amp_2
     data:
       media:
         media_content_id: /local/soundscapes/1.wav
