@@ -589,3 +589,113 @@
     prev_time_only: "{% if prev_ts is not none %}\n  {{ (prev_ts | float) | timestamp_custom('%-I:%M
       %p', true) }}\n{% else %}\n  no previous time saved\n{% endif %}"
   mode: restart
+- id: '1767857487798'
+  alias: PIR → Light + Power Strip Group + Previous Motion TTS (24h date) + Cooldown
+    - Whole Home - off
+  description: 'Motion ON: turn ON target light + power strip group, speak PREVIOUS
+    motion time only if cooldown idle. If previous motion was >= 24 hours ago, include
+    the date. Then update last_motion_time_1 to now. Motion OFF: play WAV only if
+    cooldown idle, then turn OFF light + power strip and start cooldown.
+
+    '
+  triggers:
+  - entity_id: binary_sensor.sonoff_1_occupancy
+    trigger: state
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: 'on'
+      sequence:
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ target_light not in [''unknown'',''unavailable'',''none'','''']
+              }}'
+          sequence:
+          - target:
+              entity_id: '{{ target_light }}'
+            action: light.turn_on
+      - target:
+          entity_id: group.power_strip_1
+        action: homeassistant.turn_on
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: timer.audio_cooldown_1
+            state: idle
+          - condition: template
+            value_template: '{{ audio_targets | length > 0 }}'
+          sequence:
+          - target:
+              entity_id: tts.google_translate_en_com
+            data:
+              media_player_entity_id: '{{ audio_targets }}'
+              message: "{% if prev_ts is none %}\n  No previous motion time saved
+                yet.\n{% elif hours_since_prev >= 24 %}\n  Previous motion was on\n
+                \ {{ (prev_ts | float) | timestamp_custom('%B %-d at %-I:%M %p', true)
+                }}.\n{% else %}\n  Previous motion was at {{ prev_time_only }}.\n{%
+                endif %}"
+            action: tts.speak
+          - target:
+              entity_id: timer.audio_cooldown_1
+            action: timer.start
+      - target:
+          entity_id: input_datetime.last_motion_time_1
+        data:
+          date: '{{ now().strftime(''%Y-%m-%d'') }}'
+          time: '{{ now().strftime(''%H:%M:%S'') }}'
+        action: input_datetime.set_datetime
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: 'off'
+      sequence:
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: timer.audio_cooldown_1
+            state: idle
+          - condition: template
+            value_template: '{{ audio_targets | length > 0 }}'
+          sequence:
+          - target:
+              entity_id: '{{ audio_targets }}'
+            data:
+              media:
+                media_content_id: /local/soundscapes/1.wav
+                media_content_type: music
+                metadata: {}
+            action: media_player.play_media
+          - target:
+              entity_id: timer.audio_cooldown_1
+            action: timer.start
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ target_light not in [''unknown'',''unavailable'',''none'','''']
+              }}'
+          sequence:
+          - target:
+              entity_id: '{{ target_light }}'
+            action: light.turn_off
+      - target:
+          entity_id: group.power_strip_1
+        action: homeassistant.turn_off
+  variables:
+    target_light: '{{ states(''input_select.target_light_1'') }}'
+    audio_choice: '{{ states(''input_select.audio_target_1'') }}'
+    audio_targets: "{% set c = states('input_select.audio_target_1') %}\n{% if c in
+      ['off','unknown','unavailable','none',''] %}\n  {{ [] }}\n{% elif c == 'amp_all'
+      %}\n  {{ states.media_player\n     | selectattr('entity_id', 'match', '^media_player\\\\.amp_')\n
+      \    | rejectattr('state', 'in', ['unavailable','unknown'])\n     | map(attribute='entity_id')\n
+      \    | list }}\n{% else %}\n  {{ [c] }}\n{% endif %}"
+    prev_ts: "{% set s = states('input_datetime.last_motion_time_1') %} {% if s not
+      in ['unknown','unavailable','none',''] %}\n  {{ as_timestamp(s) }}\n{% else
+      %}\n  {{ none }}\n{% endif %}"
+    hours_since_prev: "{% if prev_ts is not none %}\n  {{ ((as_timestamp(now()) -
+      (prev_ts | float)) / 3600) | float(0) }}\n{% else %}\n  {{ 0 }}\n{% endif %}"
+    prev_time_only: "{% if prev_ts is not none %}\n  {{ (prev_ts | float) | timestamp_custom('%-I:%M
+      %p', true) }}\n{% else %}\n  no previous time saved\n{% endif %}"
+  mode: restart
