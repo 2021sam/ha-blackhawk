@@ -20,6 +20,7 @@ target_light_2:
 audio_target_1:
   name: Audio Output
   options:
+    - off
     - amp_all
     - media_player.amp_1
     - media_player.amp_2
