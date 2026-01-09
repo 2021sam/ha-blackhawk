@@ -687,10 +687,11 @@
     target_light: '{{ states(''input_select.target_light_1'') }}'
     audio_choice: '{{ states(''input_select.audio_target_1'') }}'
     audio_targets: "{% set c = states('input_select.audio_target_1') %}\n{% if c in
-      ['off','unknown','unavailable','none',''] %}\n  {{ [] }}\n{% elif c == 'amp_all'
-      %}\n  {{ states.media_player\n     | selectattr('entity_id', 'match', '^media_player\\\\.amp_')\n
-      \    | rejectattr('state', 'in', ['unavailable','unknown'])\n     | map(attribute='entity_id')\n
-      \    | list }}\n{% else %}\n  {{ [c] }}\n{% endif %}"
+      ['off','unknown','unavailable','none', 'None',''] %}\n  {{ [] }}\n{% elif c
+      in ['All', 'all', 'amp_all', '*'] %}\n  {{ states.media_player\n     | selectattr('entity_id',
+      'match', '^media_player\\\\.amp_')\n     | rejectattr('state', 'in', ['unavailable','unknown'])\n
+      \    | map(attribute='entity_id')\n     | list }}\n{% else %}\n  {{ [c] }}\n{%
+      endif %}"
     prev_ts: "{% set s = states('input_datetime.last_motion_time_1') %} {% if s not
       in ['unknown','unavailable','none',''] %}\n  {{ as_timestamp(s) }}\n{% else
       %}\n  {{ none }}\n{% endif %}"
