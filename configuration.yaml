@@ -11,6 +11,7 @@ script: !include scripts.yaml
 scene: !include scenes.yaml
 
 input_select: !include helpers/input_select.yaml
+input_boolean: !include helpers/input_boolean.yaml
 group: !include helpers/group.yaml
 input_datetime: !include helpers/input_datetime.yaml
 timer: !include helpers/timer.yaml

@@ -1,0 +1,3 @@
+block_light_daytime_1:
+  name: Block light turn-on during daylight
+  icon: mdi:weather-sunny
