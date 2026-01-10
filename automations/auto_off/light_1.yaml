@@ -1,0 +1,32 @@
+- id: auto_off_light_1
+  alias: "Auto-off: selected light after N minutes (self-trigger)"
+  description: "When the selected light turns ON, wait X minutes and turn that same light OFF."
+  mode: restart
+
+  variables:
+    selected_light: "{{ states('input_select.auto_off_light_1') }}"
+    minutes: "{{ states('input_number.auto_off_minutes_1') | int(5) }}"
+
+  trigger:
+    # Static list (required). Add any lights you want this “kit” to support.
+    - platform: state
+      entity_id:
+        - light.light_1
+        - light.light_2
+        - light.wall_dimmer_1
+        - light.wall_dimmer_2
+      to: "on"
+
+  condition:
+    # Only run when the light that turned on == the selected light
+    - condition: template
+      value_template: >
+        {{ selected_light | lower not in ['none','unknown','unavailable',''] and
+           trigger.to_state.entity_id == selected_light }}
+
+  action:
+    - delay:
+        minutes: "{{ minutes }}"
+    - service: light.turn_off
+      target:
+        entity_id: "{{ selected_light }}"

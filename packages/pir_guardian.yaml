@@ -1,0 +1,575 @@
+# /config/packages/pir_guardian.yaml
+
+###############################################################################
+# HELPERS (ALL IN ONE FILE)
+###############################################################################
+
+input_boolean:
+  block_light_daytime_1:
+    name: Block light turn-on during daylight (Guardian 1)
+    icon: mdi:weather-sunny
+  block_light_daytime_2:
+    name: Block light turn-on during daylight (Guardian 2)
+    icon: mdi:weather-sunny
+  block_light_daytime_3:
+    name: Block light turn-on during daylight (Guardian 3)
+    icon: mdi:weather-sunny
+
+input_select:
+  target_light_1:
+    name: Guardian 1 - Target Light
+    options:
+      - light.wall_dimmer_1
+      - light.wall_dimmer_2
+      - light.light_1
+      - light.light_2
+
+  target_light_2:
+    name: Guardian 2 - Target Light
+    options:
+      - light.wall_dimmer_1
+      - light.wall_dimmer_2
+      - light.light_1
+      - light.light_2
+
+  target_light_3:
+    name: Guardian 3 - Target Light
+    options:
+      - light.wall_dimmer_1
+      - light.wall_dimmer_2
+      - light.light_1
+      - light.light_2
+
+  # Audio target convention: None/All or a specific media_player.*
+  audio_target_1:
+    name: Guardian 1 - Audio Target
+    options:
+      - None
+      - All
+      - media_player.amp_1
+      - media_player.amp_2
+
+  audio_target_2:
+    name: Guardian 2 - Audio Target
+    options:
+      - None
+      - All
+      - media_player.amp_1
+      - media_player.amp_2
+
+  audio_target_3:
+    name: Guardian 3 - Audio Target
+    options:
+      - None
+      - All
+      - media_player.amp_1
+      - media_player.amp_2
+
+input_datetime:
+  last_motion_time_1:
+    name: Guardian 1 - Last Motion Time
+    has_date: true
+    has_time: true
+
+  last_motion_time_2:
+    name: Guardian 2 - Last Motion Time
+    has_date: true
+    has_time: true
+
+  last_motion_time_3:
+    name: Guardian 3 - Last Motion Time
+    has_date: true
+    has_time: true
+
+timer:
+  audio_cooldown_1:
+    name: Guardian 1 - Audio Cooldown
+    duration: "00:02:00"
+
+  audio_cooldown_2:
+    name: Guardian 2 - Audio Cooldown
+    duration: "00:02:00"
+
+  audio_cooldown_3:
+    name: Guardian 3 - Audio Cooldown
+    duration: "00:02:00"
+
+###############################################################################
+# AUTOMATIONS (2-PART PER GUARDIAN)
+###############################################################################
+
+automation:
+
+  ###########################################################################
+  # GUARDIAN 1 - PART 1 (MOTION ON)
+  ###########################################################################
+  - id: pir_guardian_1_on
+    alias: "PIR Guardian 1 - Motion ON (Light+Power, Audio Always)"
+    mode: restart
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        to: "on"
+    variables:
+      target_light: "{{ states('input_select.target_light_1') }}"
+      audio_choice: "{{ states('input_select.audio_target_1') }}"
+      block_light_daytime: "{{ is_state('input_boolean.block_light_daytime_1','on') }}"
+
+      # Audio targets list
+      audio_targets: >-
+        {% set c = states('input_select.audio_target_1') %}
+        {% if c in ['None','none','off','unknown','unavailable',''] %}
+          {{ [] }}
+        {% elif c in ['All','all','amp_all','*'] %}
+          {{ states.media_player
+             | selectattr('entity_id', 'match', '^media_player\\.amp_')
+             | rejectattr('state', 'in', ['unavailable','unknown'])
+             | map(attribute='entity_id')
+             | list }}
+        {% else %}
+          {{ [c] }}
+        {% endif %}
+
+      # Previous motion timestamp
+      prev_ts: >-
+        {% set s = states('input_datetime.last_motion_time_1') %}
+        {% if s not in ['unknown','unavailable','none','None',''] %}
+          {{ as_timestamp(s) }}
+        {% else %}
+          {{ none }}
+        {% endif %}
+
+      hours_since_prev: >-
+        {% if prev_ts is not none %}
+          {{ ((as_timestamp(now()) - (prev_ts | float)) / 3600) | float(0) }}
+        {% else %}
+          {{ 0 }}
+        {% endif %}
+
+      prev_time_only: >-
+        {% if prev_ts is not none %}
+          {{ (prev_ts | float) | timestamp_custom('%-I:%M %p', true) }}
+        {% else %}
+          no previous time saved
+        {% endif %}
+
+      allow_light_now: >-
+        {{ (target_light not in ['unknown','unavailable','none','None',''])
+           and ( (not block_light_daytime) or is_state('sun.sun','below_horizon') ) }}
+
+    action:
+      # Light ON only if allowed (daylight block affects only light)
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ allow_light_now }}"
+            sequence:
+              - service: light.turn_on
+                target:
+                  entity_id: "{{ target_light }}"
+
+      # Power strip ON (always)
+      - service: homeassistant.turn_on
+        target:
+          entity_id: group.power_strip_1
+
+      # TTS (audio always allowed, but gated by cooldown idle)
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: timer.audio_cooldown_1
+                state: idle
+              - condition: template
+                value_template: "{{ audio_targets | length > 0 }}"
+            sequence:
+              - service: tts.speak
+                target:
+                  entity_id: tts.google_translate_en_com
+                data:
+                  media_player_entity_id: "{{ audio_targets }}"
+                  message: >-
+                    {% if prev_ts is none %}
+                      No previous motion time saved yet.
+                    {% elif hours_since_prev >= 24 %}
+                      Previous motion was on {{ (prev_ts | float) | timestamp_custom('%B %-d at %-I:%M %p', true) }}.
+                    {% else %}
+                      Previous motion was at {{ prev_time_only }}.
+                    {% endif %}
+
+      # Update "last motion" to now (always)
+      - service: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.last_motion_time_1
+        data:
+          date: "{{ now().strftime('%Y-%m-%d') }}"
+          time: "{{ now().strftime('%H:%M:%S') }}"
+
+
+  ###########################################################################
+  # GUARDIAN 1 - PART 2 (MOTION OFF + COOL DOWN STARTS AT END)
+  ###########################################################################
+  - id: pir_guardian_1_off
+    alias: "PIR Guardian 1 - Motion OFF (Turn Off + WAV + Start Cooldown at End)"
+    mode: restart
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        to: "off"
+    variables:
+      target_light: "{{ states('input_select.target_light_1') }}"
+      audio_choice: "{{ states('input_select.audio_target_1') }}"
+      audio_targets: >-
+        {% set c = states('input_select.audio_target_1') %}
+        {% if c in ['None','none','off','unknown','unavailable',''] %}
+          {{ [] }}
+        {% elif c in ['All','all','amp_all','*'] %}
+          {{ states.media_player
+             | selectattr('entity_id', 'match', '^media_player\\.amp_')
+             | rejectattr('state', 'in', ['unavailable','unknown'])
+             | map(attribute='entity_id')
+             | list }}
+        {% else %}
+          {{ [c] }}
+        {% endif %}
+    action:
+      # 1-minute clear confirm (this is the “no blocking behavior” you wanted)
+      - delay: "00:01:00"
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: "off"
+
+      # WAV only if cooldown is idle (but cooldown starts at the END)
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: timer.audio_cooldown_1
+                state: idle
+              - condition: template
+                value_template: "{{ audio_targets | length > 0 }}"
+            sequence:
+              - service: media_player.play_media
+                target:
+                  entity_id: "{{ audio_targets }}"
+                data:
+                  media:
+                    media_content_id: /local/soundscapes/1.wav
+                    media_content_type: music
+                    metadata: {}
+
+      # Light OFF (always, daylight does not matter)
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ target_light not in ['unknown','unavailable','none','None',''] }}"
+            sequence:
+              - service: light.turn_off
+                target:
+                  entity_id: "{{ target_light }}"
+
+      # Power strip OFF (always)
+      - service: homeassistant.turn_off
+        target:
+          entity_id: group.power_strip_1
+
+      # COOLDOWN STARTS AT VERY END (your required behavior)
+      - service: timer.start
+        target:
+          entity_id: timer.audio_cooldown_1
+
+
+  ###########################################################################
+  # GUARDIAN 2 (COPY OF 1, SUFFIXED)
+  ###########################################################################
+
+  - id: pir_guardian_2_on
+    alias: "PIR Guardian 2 - Motion ON (Light+Power, Audio Always)"
+    mode: restart
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        to: "on"
+    variables:
+      target_light: "{{ states('input_select.target_light_2') }}"
+      audio_choice: "{{ states('input_select.audio_target_2') }}"
+      block_light_daytime: "{{ is_state('input_boolean.block_light_daytime_2','on') }}"
+      audio_targets: >-
+        {% set c = states('input_select.audio_target_2') %}
+        {% if c in ['None','none','off','unknown','unavailable',''] %}
+          {{ [] }}
+        {% elif c in ['All','all','amp_all','*'] %}
+          {{ states.media_player
+             | selectattr('entity_id', 'match', '^media_player\\.amp_')
+             | rejectattr('state', 'in', ['unavailable','unknown'])
+             | map(attribute='entity_id')
+             | list }}
+        {% else %}
+          {{ [c] }}
+        {% endif %}
+      prev_ts: >-
+        {% set s = states('input_datetime.last_motion_time_2') %}
+        {% if s not in ['unknown','unavailable','none','None',''] %}
+          {{ as_timestamp(s) }}
+        {% else %}
+          {{ none }}
+        {% endif %}
+      hours_since_prev: >-
+        {% if prev_ts is not none %}
+          {{ ((as_timestamp(now()) - (prev_ts | float)) / 3600) | float(0) }}
+        {% else %}
+          {{ 0 }}
+        {% endif %}
+      prev_time_only: >-
+        {% if prev_ts is not none %}
+          {{ (prev_ts | float) | timestamp_custom('%-I:%M %p', true) }}
+        {% else %}
+          no previous time saved
+        {% endif %}
+      allow_light_now: >-
+        {{ (target_light not in ['unknown','unavailable','none','None',''])
+           and ( (not block_light_daytime) or is_state('sun.sun','below_horizon') ) }}
+    action:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ allow_light_now }}"
+            sequence:
+              - service: light.turn_on
+                target:
+                  entity_id: "{{ target_light }}"
+      - service: homeassistant.turn_on
+        target:
+          entity_id: group.power_strip_1
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: timer.audio_cooldown_2
+                state: idle
+              - condition: template
+                value_template: "{{ audio_targets | length > 0 }}"
+            sequence:
+              - service: tts.speak
+                target:
+                  entity_id: tts.google_translate_en_com
+                data:
+                  media_player_entity_id: "{{ audio_targets }}"
+                  message: >-
+                    {% if prev_ts is none %}
+                      No previous motion time saved yet.
+                    {% elif hours_since_prev >= 24 %}
+                      Previous motion was on {{ (prev_ts | float) | timestamp_custom('%B %-d at %-I:%M %p', true) }}.
+                    {% else %}
+                      Previous motion was at {{ prev_time_only }}.
+                    {% endif %}
+      - service: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.last_motion_time_2
+        data:
+          date: "{{ now().strftime('%Y-%m-%d') }}"
+          time: "{{ now().strftime('%H:%M:%S') }}"
+
+  - id: pir_guardian_2_off
+    alias: "PIR Guardian 2 - Motion OFF (Turn Off + WAV + Start Cooldown at End)"
+    mode: restart
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        to: "off"
+    variables:
+      target_light: "{{ states('input_select.target_light_2') }}"
+      audio_targets: >-
+        {% set c = states('input_select.audio_target_2') %}
+        {% if c in ['None','none','off','unknown','unavailable',''] %}
+          {{ [] }}
+        {% elif c in ['All','all','amp_all','*'] %}
+          {{ states.media_player
+             | selectattr('entity_id', 'match', '^media_player\\.amp_')
+             | rejectattr('state', 'in', ['unavailable','unknown'])
+             | map(attribute='entity_id')
+             | list }}
+        {% else %}
+          {{ [c] }}
+        {% endif %}
+    action:
+      - delay: "00:01:00"
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: "off"
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: timer.audio_cooldown_2
+                state: idle
+              - condition: template
+                value_template: "{{ audio_targets | length > 0 }}"
+            sequence:
+              - service: media_player.play_media
+                target:
+                  entity_id: "{{ audio_targets }}"
+                data:
+                  media:
+                    media_content_id: /local/soundscapes/1.wav
+                    media_content_type: music
+                    metadata: {}
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ target_light not in ['unknown','unavailable','none','None',''] }}"
+            sequence:
+              - service: light.turn_off
+                target:
+                  entity_id: "{{ target_light }}"
+      - service: homeassistant.turn_off
+        target:
+          entity_id: group.power_strip_1
+      - service: timer.start
+        target:
+          entity_id: timer.audio_cooldown_2
+
+
+  ###########################################################################
+  # GUARDIAN 3 (COPY OF 1, SUFFIXED)
+  ###########################################################################
+
+  - id: pir_guardian_3_on
+    alias: "PIR Guardian 3 - Motion ON (Light+Power, Audio Always)"
+    mode: restart
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        to: "on"
+    variables:
+      target_light: "{{ states('input_select.target_light_3') }}"
+      audio_choice: "{{ states('input_select.audio_target_3') }}"
+      block_light_daytime: "{{ is_state('input_boolean.block_light_daytime_3','on') }}"
+      audio_targets: >-
+        {% set c = states('input_select.audio_target_3') %}
+        {% if c in ['None','none','off','unknown','unavailable',''] %}
+          {{ [] }}
+        {% elif c in ['All','all','amp_all','*'] %}
+          {{ states.media_player
+             | selectattr('entity_id', 'match', '^media_player\\.amp_')
+             | rejectattr('state', 'in', ['unavailable','unknown'])
+             | map(attribute='entity_id')
+             | list }}
+        {% else %}
+          {{ [c] }}
+        {% endif %}
+      prev_ts: >-
+        {% set s = states('input_datetime.last_motion_time_3') %}
+        {% if s not in ['unknown','unavailable','none','None',''] %}
+          {{ as_timestamp(s) }}
+        {% else %}
+          {{ none }}
+        {% endif %}
+      hours_since_prev: >-
+        {% if prev_ts is not none %}
+          {{ ((as_timestamp(now()) - (prev_ts | float)) / 3600) | float(0) }}
+        {% else %}
+          {{ 0 }}
+        {% endif %}
+      prev_time_only: >-
+        {% if prev_ts is not none %}
+          {{ (prev_ts | float) | timestamp_custom('%-I:%M %p', true) }}
+        {% else %}
+          no previous time saved
+        {% endif %}
+      allow_light_now: >-
+        {{ (target_light not in ['unknown','unavailable','none','None',''])
+           and ( (not block_light_daytime) or is_state('sun.sun','below_horizon') ) }}
+    action:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ allow_light_now }}"
+            sequence:
+              - service: light.turn_on
+                target:
+                  entity_id: "{{ target_light }}"
+      - service: homeassistant.turn_on
+        target:
+          entity_id: group.power_strip_1
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: timer.audio_cooldown_3
+                state: idle
+              - condition: template
+                value_template: "{{ audio_targets | length > 0 }}"
+            sequence:
+              - service: tts.speak
+                target:
+                  entity_id: tts.google_translate_en_com
+                data:
+                  media_player_entity_id: "{{ audio_targets }}"
+                  message: >-
+                    {% if prev_ts is none %}
+                      No previous motion time saved yet.
+                    {% elif hours_since_prev >= 24 %}
+                      Previous motion was on {{ (prev_ts | float) | timestamp_custom('%B %-d at %-I:%M %p', true) }}.
+                    {% else %}
+                      Previous motion was at {{ prev_time_only }}.
+                    {% endif %}
+      - service: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.last_motion_time_3
+        data:
+          date: "{{ now().strftime('%Y-%m-%d') }}"
+          time: "{{ now().strftime('%H:%M:%S') }}"
+
+  - id: pir_guardian_3_off
+    alias: "PIR Guardian 3 - Motion OFF (Turn Off + WAV + Start Cooldown at End)"
+    mode: restart
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        to: "off"
+    variables:
+      target_light: "{{ states('input_select.target_light_3') }}"
+      audio_targets: >-
+        {% set c = states('input_select.audio_target_3') %}
+        {% if c in ['None','none','off','unknown','unavailable',''] %}
+          {{ [] }}
+        {% elif c in ['All','all','amp_all','*'] %}
+          {{ states.media_player
+             | selectattr('entity_id', 'match', '^media_player\\.amp_')
+             | rejectattr('state', 'in', ['unavailable','unknown'])
+             | map(attribute='entity_id')
+             | list }}
+        {% else %}
+          {{ [c] }}
+        {% endif %}
+    action:
+      - delay: "00:01:00"
+      - condition: state
+        entity_id: binary_sensor.sonoff_1_occupancy
+        state: "off"
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: timer.audio_cooldown_3
+                state: idle
+              - condition: template
+                value_template: "{{ audio_targets | length > 0 }}"
+            sequence:
+              - service: media_player.play_media
+                target:
+                  entity_id: "{{ audio_targets }}"
+                data:
+                  media:
+                    media_content_id: /local/soundscapes/1.wav
+                    media_content_type: music
+                    metadata: {}
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ target_light not in ['unknown','unavailable','none','None',''] }}"
+            sequence:
+              - service: light.turn_off
+                target:
+                  entity_id: "{{ target_light }}"
+      - service: homeassistant.turn_off
+        target:
+          entity_id: group.power_strip_1
+      - service: timer.start
+        target:
+          entity_id: timer.audio_cooldown_3

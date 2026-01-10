@@ -1,4 +1,41 @@
 # helpers/input_select.yaml
+
+
+auto_off_light_1:
+  name: "Auto-off: Light (self-trigger)"
+  icon: mdi:lightbulb
+  options:
+    - none
+    - light.light_1
+    - light.light_2
+    - light.wall_dimmer_1
+    - light.wall_dimmer_2
+
+
+
+auto_off_light_trigger_1:
+  name: "Auto-off: Target light"
+  options:
+    - none
+    - light.light_1
+    - light.light_2
+    - light.wall_dimmer_1
+    - light.wall_dimmer_2
+  icon: mdi:lightbulb
+
+auto_off_light_target_1:
+  name: "Auto-off: Target light"
+  options:
+    - none
+    - light.light_1
+    - light.light_2
+    - light.wall_dimmer_1
+    - light.wall_dimmer_2
+  icon: mdi:lightbulb
+
+
+
+
 target_light_1:
   name: Target Light 1
   options:
