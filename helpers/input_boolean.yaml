@@ -1,3 +1,4 @@
+# Guardian:
 block_light_daytime_1:
-  name: Block light turn-on during daylight
+  name: guardian-01-condition-daylight
   icon: mdi:weather-sunny

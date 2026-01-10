@@ -1,0 +1,106 @@
+alias: PIR Guardian - ON - 1
+description: >
+  PIR ON: Light turns on only if not daylight-blocked. Power strip always on.
+  Speak PREVIOUS motion time only if cooldown is idle. Update last_motion_time_1.
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.sonoff_1_occupancy
+    to: "on"
+
+actions:
+  # Light ON (guarded)
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{ target_light not in ['unknown','unavailable','none','None',''] }}
+          - condition: template
+            value_template: >-
+              {{ is_state('input_boolean.block_light_daytime_1','off')
+                 or is_state('sun.sun','below_horizon') }}
+        sequence:
+          - action: light.turn_on
+            target:
+              entity_id: "{{ target_light }}"
+
+  # Power strip always ON
+  - action: homeassistant.turn_on
+    target:
+      entity_id: group.power_strip_1
+
+  # TTS (cooldown-gated) + support your options: None / All / media_player.*
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: timer.audio_cooldown_1
+            state: idle
+          - condition: template
+            value_template: >-
+              {{ audio_choice not in ['None','none','off','unknown','unavailable',''] }}
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ audio_choice in ['All','all','*'] }}"
+                sequence:
+                  - action: tts.speak
+                    target:
+                      entity_id: tts.google_translate_en_com
+                    data:
+                      media_player_entity_id:
+                        - media_player.amp_1
+                        - media_player.amp_2
+                      message: >-
+                        {% if prev_ts is none %}
+                          No previous motion time saved yet.
+                        {% elif hours_since_prev >= 24 %}
+                          Previous motion was on
+                          {{ (prev_ts | float) | timestamp_custom('%B %-d at %-I:%M %p', true) }}.
+                        {% else %}
+                          Previous motion was at
+                          {{ (prev_ts | float) | timestamp_custom('%-I:%M %p', true) }}.
+                        {% endif %}
+            default:
+              - action: tts.speak
+                target:
+                  entity_id: tts.google_translate_en_com
+                data:
+                  media_player_entity_id: "{{ audio_choice }}"
+                  message: >-
+                    {% if prev_ts is none %}
+                      No previous motion time saved yet.
+                    {% elif hours_since_prev >= 24 %}
+                      Previous motion was on
+                      {{ (prev_ts | float) | timestamp_custom('%B %-d at %-I:%M %p', true) }}.
+                    {% else %}
+                      Previous motion was at
+                      {{ (prev_ts | float) | timestamp_custom('%-I:%M %p', true) }}.
+                    {% endif %}
+
+  # Update timestamp LAST (single call)
+  - action: input_datetime.set_datetime
+    target:
+      entity_id: input_datetime.last_motion_time_1
+    data:
+      datetime: "{{ now() }}"
+
+variables:
+  target_light: "{{ states('input_select.target_light_1') }}"
+  audio_choice: "{{ states('input_select.audio_target_1') }}"
+
+  prev_ts: >-
+    {% set s = states('input_datetime.last_motion_time_1') %}
+    {% if s not in ['unknown','unavailable','none',''] %}
+      {{ as_timestamp(s) }}
+    {% else %}
+      {{ none }}
+    {% endif %}
+
+  hours_since_prev: >-
+    {% if prev_ts is not none %}
+      {{ ((as_timestamp(now()) - (prev_ts | float)) / 3600) | float(0) }}
+    {% else %}
+      {{ 0 }}
+    {% endif %}
+
+mode: restart

@@ -1,9 +1,5 @@
+# Guardian:
 last_motion_time_1:
-  name: Last Motion Time 1
-  has_date: true
-  has_time: true
-
-last_motion_time_2:
-  name: Last Motion Time 2
+  name: guardian-01-state-last-motion
   has_date: true
   has_time: true

@@ -1,6 +1,6 @@
 # helpers/group.yaml
 power_strip_1:
-  name: Power Strip 1
+  name: Guardian 01 Target - Power Strip
   entities:
     - switch.power_1_switch_1
     - switch.power_1_switch_2
