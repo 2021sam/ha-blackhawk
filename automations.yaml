@@ -1182,10 +1182,9 @@
       %p', true) }}\n{% else %}\n  no previous time saved\n{% endif %}"
   mode: restart
 - id: '1768001926130'
-  alias: PIR Guardian - OFF (Confirm Clear + WAV + Shutdown + Cooldown)
-  description: 'PIR OFF: wait 1 minute and confirm still off. If cooldown is idle,
-    play WAV. Then turn off light + power strip. Start cooldown ONLY at the end and
-    ONLY if WAV played.
+  alias: PIR Guardian - OFF (WAV + Shutdown + Cooldown)
+  description: 'PIR OFF: immediately play WAV only if cooldown is idle, then turn
+    off light + power strip. Start cooldown ONLY at the end and ONLY if WAV played.
 
     '
   triggers:
@@ -1193,10 +1192,6 @@
     entity_id: binary_sensor.sonoff_1_occupancy
     to: 'off'
   actions:
-  - delay: 00:01:00
-  - condition: state
-    entity_id: binary_sensor.sonoff_1_occupancy
-    state: 'off'
   - variables:
       did_wav: false
   - choose:
