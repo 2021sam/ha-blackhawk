@@ -1094,7 +1094,7 @@
       %p', true) }}\n{% else %}\n  no previous time saved\n{% endif %}"
   mode: restart
 - id: '1768001884284'
-  alias: PIR Guardian - ON (Light + Strip + Prev Motion TTS)
+  alias: PIR Guardian - ON - 1
   description: 'PIR ON: Light turns on only if not daylight-blocked. Power strip always
     on. Speak PREVIOUS motion time only if cooldown is idle. Update last_motion_time_1.
 
@@ -1182,7 +1182,7 @@
       %p', true) }}\n{% else %}\n  no previous time saved\n{% endif %}"
   mode: restart
 - id: '1768001926130'
-  alias: PIR Guardian - OFF (WAV + Shutdown + Cooldown)
+  alias: PIR Guardian - OFF - 1
   description: 'PIR OFF: immediately play WAV only if cooldown is idle, then turn
     off light + power strip. Start cooldown ONLY at the end and ONLY if WAV played.
 
