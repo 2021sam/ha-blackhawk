@@ -1,0 +1,23 @@
+reload_all_core_configs:
+  alias: Reload Core Configs (Automations · Scripts · Helpers)
+  icon: mdi:reload
+  mode: single
+  sequence:
+    # Automations
+    - action: automation.reload
+
+    # Scripts
+    - action: script.reload
+
+    # Helpers (input_* entities)
+    - action: input_boolean.reload
+    - action: input_select.reload
+    - action: input_number.reload
+    - action: input_datetime.reload
+    - action: input_text.reload
+
+    # Timers
+    - action: timer.reload
+
+    # Groups
+    - action: group.reload

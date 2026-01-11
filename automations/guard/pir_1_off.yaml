@@ -1,0 +1,77 @@
+- id: guardian_01_pir_off
+  alias: PIR Guardian - OFF - 1
+  description: >
+    PIR OFF: immediately play WAV only if cooldown is idle, then turn off light +
+    power strip. Start cooldown ONLY at the end and ONLY if WAV played.
+
+  triggers:
+    - trigger: state
+      entity_id: binary_sensor.sonoff_1_occupancy
+      to: "off"
+
+  variables:
+    target_light: "{{ states('input_select.target_light_1') }}"
+    audio_choice: "{{ states('input_select.audio_target_1') }}"
+    did_wav: false
+
+  actions:
+    # Play WAV (cooldown-gated) using helpers: None / All / media_player.*
+    - choose:
+        - conditions:
+            - condition: state
+              entity_id: timer.audio_cooldown_1
+              state: idle
+            - condition: template
+              value_template: >
+                {{ audio_choice not in ['None','none','off','unknown','unavailable',''] }}
+          sequence:
+            - choose:
+                - conditions:
+                    - condition: template
+                      value_template: "{{ audio_choice in ['All','all','*'] }}"
+                  sequence:
+                    - action: media_player.play_media
+                      target:
+                        entity_id:
+                          - media_player.amp_1
+                          - media_player.amp_2
+                      data:
+                        media_content_id: /local/soundscapes/1.wav
+                        media_content_type: music
+              default:
+                - action: media_player.play_media
+                  target:
+                    entity_id: "{{ audio_choice }}"
+                  data:
+                    media_content_id: /local/soundscapes/1.wav
+                    media_content_type: music
+            - variables:
+                did_wav: true
+
+    # Light OFF (guarded)
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: >
+                {{ target_light not in ['unknown','unavailable','none','None',''] }}
+          sequence:
+            - action: light.turn_off
+              target:
+                entity_id: "{{ target_light }}"
+
+    # Power strip OFF
+    - action: homeassistant.turn_off
+      target:
+        entity_id: group.power_strip_1
+
+    # Start cooldown ONLY if WAV played
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ did_wav }}"
+          sequence:
+            - action: timer.start
+              target:
+                entity_id: timer.audio_cooldown_1
+
+  mode: single

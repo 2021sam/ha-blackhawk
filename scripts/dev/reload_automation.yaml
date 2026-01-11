@@ -1,0 +1,5 @@
+reload_automations:
+  alias: Reload Automations
+  icon: mdi:reload
+  sequence:
+    - action: automation.reload

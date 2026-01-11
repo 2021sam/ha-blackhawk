@@ -1,0 +1,23 @@
+reload_automations_only:
+  alias: Reload Automations Only
+  icon: mdi:robot
+  sequence:
+    - action: automation.reload
+
+reload_scripts_only:
+  alias: Reload Scripts Only
+  icon: mdi:script
+  sequence:
+    - action: script.reload
+
+reload_helpers_only:
+  alias: Reload Helpers Only
+  icon: mdi:tune
+  sequence:
+    - action: input_boolean.reload
+    - action: input_select.reload
+    - action: input_number.reload
+    - action: input_datetime.reload
+    - action: input_text.reload
+    - action: timer.reload
+    - action: group.reload

@@ -1,0 +1,24 @@
+test_play_soundscape:
+  alias: TEST – Play Soundscape - amp 1
+  mode: single
+  sequence:
+    - action: media_player.play_media
+      target:
+        entity_id: media_player.amp_1
+      data:
+        media:
+          media_content_id: /local/soundscapes/1.wav
+          media_content_type: music
+          metadata: {}
+
+test_play_soundscape_simplified:
+  alias: TEST – Play Soundscape - simplified - amp 2
+  mode: single
+  sequence:
+    - action: media_player.play_media
+      target:
+        entity_id: media_player.amp_2
+      data:
+        media:
+          media_content_id: /local/soundscapes/1.wav
+          media_content_type: music
