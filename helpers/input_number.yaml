@@ -7,3 +7,14 @@ auto_off_minutes_1:
   mode: slider
   unit_of_measurement: min
   initial: 1
+
+audio_cooldown_minutes_1:
+  name: "Guard 1: Setting - Audio Cooldown (min)"
+  min: 0
+  max: 60
+  step: 1
+  mode: slider
+  unit_of_measurement: min
+  icon: mdi:timer-cog
+  initial: 10
+  

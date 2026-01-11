@@ -1,8 +1,11 @@
+# PART 2 (PIR OFF) — start cooldown using a user-adjustable minutes helper
+
 - id: guardian_01_pir_off
   alias: PIR Guardian - OFF - 1
   description: >
     PIR OFF: immediately play WAV only if cooldown is idle, then turn off light +
     power strip. Start cooldown ONLY at the end and ONLY if WAV played.
+    Cooldown duration comes from input_number.audio_cooldown_minutes_1.
 
   triggers:
     - trigger: state
@@ -13,6 +16,7 @@
     target_light: "{{ states('input_select.target_light_1') }}"
     audio_choice: "{{ states('input_select.audio_target_1') }}"
     did_wav: false
+    cooldown_minutes: "{{ states('input_number.audio_cooldown_minutes_1') | int(5) }}"
 
   actions:
     # Play WAV (cooldown-gated) using helpers: None / All / media_player.*
@@ -64,14 +68,16 @@
       target:
         entity_id: group.power_strip_1
 
-    # Start cooldown ONLY if WAV played
+    # Start cooldown ONLY if WAV played (duration from slider)
     - choose:
         - conditions:
             - condition: template
-              value_template: "{{ did_wav }}"
+              value_template: "{{ did_wav and cooldown_minutes > 0 }}"
           sequence:
             - action: timer.start
               target:
                 entity_id: timer.audio_cooldown_1
+              data:
+                duration: "{{ '00:%02d:00' | format(cooldown_minutes) }}"
 
   mode: single
