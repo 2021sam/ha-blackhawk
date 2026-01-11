@@ -87,8 +87,8 @@
         datetime: "{{ now() }}"
 
   variables:
-    target_light: "{{ states('input_select.target_light_1') }}"
-    audio_choice: "{{ states('input_select.audio_target_1') }}"
+    target_light: "{{ states('input_select.guard_1_target_light_1') }}"
+    audio_choice: "{{ states('input_select.guard_1_audio_target_1') }}"
     prev_ts: >-
       {% set s = states('input_datetime.last_motion_time_1') %}
       {% if s not in ['unknown','unavailable','none',''] %}

@@ -5,7 +5,7 @@
   description: >
     PIR OFF: immediately play WAV only if cooldown is idle, then turn off light +
     power strip. Start cooldown ONLY at the end and ONLY if WAV played.
-    Cooldown duration comes from input_number.audio_cooldown_minutes_1.
+    Cooldown duration comes from input_number.guard_1_audio_cooldown_minutes_1.
 
   triggers:
     - trigger: state
@@ -13,10 +13,10 @@
       to: "off"
 
   variables:
-    target_light: "{{ states('input_select.target_light_1') }}"
-    audio_choice: "{{ states('input_select.audio_target_1') }}"
+    target_light: "{{ states('input_select.guard_1_target_light_1') }}"
+    audio_choice: "{{ states('input_select.guard_1_audio_target_1') }}"
     did_wav: false
-    cooldown_minutes: "{{ states('input_number.audio_cooldown_minutes_1') | int(5) }}"
+    cooldown_minutes: "{{ states('input_number.guard_1_audio_cooldown_minutes_1') | int(5) }}"
 
   actions:
     # Play WAV (cooldown-gated) using helpers: None / All / media_player.*
