@@ -1,5 +1,5 @@
 auto_off_minutes_1:
-  name: "Auto-off: Minutes"
+  name: "Auto-off 1: Minutes"
   icon: mdi:timer-outline
   min: 1
   max: 60
