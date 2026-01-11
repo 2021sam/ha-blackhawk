@@ -8,8 +8,6 @@ frontend:
 
 automation: !include_dir_merge_list automations
 script: !include_dir_merge_named scripts
-
-# script: !include scripts.yaml
 scene: !include scenes.yaml
 
 input_number: !include helpers/input_number.yaml
