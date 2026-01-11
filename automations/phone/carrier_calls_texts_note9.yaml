@@ -1,0 +1,64 @@
+- id: '1767328832669'
+  alias: Deercreek - TTS - AT&T (Carrier) Phone - 2388 - Note9
+  description: >
+    AT&T carrier phone events for Laurie on Samsung Galaxy Note 9.
+
+    Note9 sensors:
+    - Notifications: sensor.sm_n960u_last_notification
+    - Phone state:  sensor.sm_n960u_phone_state
+
+    This speaks:
+    - Incoming call ringing (phone_state = ringing)
+    - Carrier SMS texts from Samsung Messages app (package = com.samsung.android.messaging)
+  triggers:
+    - entity_id: sensor.sm_n960u_phone_state
+      trigger: state
+    - entity_id: sensor.sm_n960u_last_notification
+      attribute: post_time
+      trigger: state
+  conditions: []
+  actions:
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: >
+                {{ trigger.entity_id == 'sensor.sm_n960u_phone_state'
+                   and trigger.to_state is not none
+                   and trigger.to_state.state == 'ringing' }}
+          sequence:
+            - action: tts.speak
+              target:
+                entity_id: tts.google_translate_en_com
+              data:
+                media_player_entity_id: media_player.amp_1
+                message: "{{ prefix }}Phone is ringing."
+        - conditions:
+            - condition: template
+              value_template: >
+                {{ trigger.entity_id == 'sensor.sm_n960u_last_notification'
+                   and (state_attr('sensor.sm_n960u_last_notification','package') or '')
+                      == 'com.samsung.android.messaging' }}
+          sequence:
+            - variables:
+                n: sensor.sm_n960u_last_notification
+                who: "{{ state_attr(n,'android.title') or 'Text' }}"
+                txt_raw: >
+                  {% set msgs = state_attr(n,'android.messages') %}
+                  {% if msgs is iterable and msgs|length > 0 and msgs[-1] is mapping and 'text' in msgs[-1] %}
+                    {{ msgs[-1].text }}
+                  {% else %}
+                    {{ state_attr(n,'android.text') or '' }}
+                  {% endif %}
+                txt: "{{ txt_raw | replace('\n',' ') | replace('\r',' ') | trim | truncate(180, True, '…') }}"
+            - condition: template
+              value_template: "{{ txt|length > 0 }}"
+            - action: tts.speak
+              target:
+                entity_id: tts.google_translate_en_com
+              data:
+                media_player_entity_id: media_player.amp_1
+                message: "{{ prefix }}{{ who }}: {{ txt }}"
+  mode: restart
+  variables:
+    phone_model: Note - 2388
+    prefix: "Laurie - {{ phone_model }}: "
