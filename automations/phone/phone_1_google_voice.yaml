@@ -1,9 +1,9 @@
 - id: '1767321854973'
-  alias: Google Voice - Phone 1 - new
+  alias: Google Voice - Phone 1
   description: >
     Google Voice notifications → TTS on amp_1.
   triggers:
-    - entity_id: sensor.phone_1_google_voice_last_notification
+    - entity_id: sensor.phone_1_last_notification
       attribute: post_time
       trigger: state
   conditions:
@@ -31,5 +31,5 @@
         message: "{{ prefix }}{{ who }}: {{ txt }}"
   mode: single
   variables:
-    n: sensor.phone_1_google_voice_last_notification
+    n: sensor.phone_1_last_notification
     prefix: "Phone 1 Google Voice: "
