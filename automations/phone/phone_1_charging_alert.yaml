@@ -1,15 +1,15 @@
 - id: '1767258109835'
-  alias: Deercreek - TTS Alert - Samsung power state changed
+  alias: Google Voice 1 - TTS Alert - power state changed
   description: Speak when Samsung HA phone is plugged in or unplugged
   triggers:
-    - entity_id: binary_sensor.phone_1_google_voice_is_charging
+    - entity_id: sensor.phone_1_battery_state
       trigger: state
   actions:
     - choose:
         - conditions:
             - condition: state
-              entity_id: binary_sensor.phone_1_google_voice_is_charging
-              state: 'on'
+              entity_id: sensor.phone_1_battery_state
+              state: 'charging'
           sequence:
             - action: tts.speak
               target:
@@ -19,8 +19,8 @@
                 message: Power restored. The Home Assistant phone is now charging.
         - conditions:
             - condition: state
-              entity_id: binary_sensor.phone_1_google_voice_is_charging
-              state: 'off'
+              entity_id: sensor.phone_1_battery_state
+              state: 'discharging'
           sequence:
             - action: tts.speak
               target:
