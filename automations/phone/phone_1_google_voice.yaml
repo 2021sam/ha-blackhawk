@@ -1,5 +1,5 @@
 - id: '1767321854973'
-  alias: Google Voice - Phone 1
+  alias: Phone 1 - Google Voice - TTS
   description: >
     Google Voice notifications → TTS on amp_1.
   triggers:

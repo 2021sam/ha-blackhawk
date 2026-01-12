@@ -1,5 +1,5 @@
 - id: '1767328832669'
-  alias: Phone 1 - TTS - Cellular (Calls + SMS)
+  alias: Phone 1 - Cellular - TTS
   description: >
     Phone 1 cellular events:
     - Incoming call ringing
