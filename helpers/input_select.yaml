@@ -14,7 +14,7 @@ auto_off_light_1:
 
 # Guardian
 guard_1_target_light:
-  name: Guard 1: Target — Light
+  name: "Guard 1: Target — Light"
   options:
     - light.wall_dimmer_1
     - light.wall_dimmer_2
@@ -22,7 +22,7 @@ guard_1_target_light:
     - light.light_2
 
 guard_1_audio_target:
-  name: Guard 1: Target — Audio
+  name: "Guard 1: Target — Audio"
   options:
     - None
     - All
