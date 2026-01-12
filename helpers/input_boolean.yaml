@@ -1,4 +1,6 @@
+# homeassistant/helpers/input_boolean.yaml
+
 # Guardian:
-block_light_daytime_1:
-  name: Guard 1 — Condition — Daylight
+guard_1_block_light_daytime:
+  name: "Guard 1: Condition — Daylight"
   icon: mdi:weather-sunny

@@ -1,3 +1,5 @@
-audio_cooldown_1:
-  name: Guard 1 — Condition — Audio Cooldown
+# homeassistant/helpers/timer.yaml
+
+guard_1_audio_cooldown:
+  name: Guard 1: Condition — Audio Cooldown
   duration: "00:05:00"

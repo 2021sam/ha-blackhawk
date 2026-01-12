@@ -11,7 +11,7 @@ auto_off_minutes_1:
   initial: 1
 
 # Guardian:
-guard_1_audio_cooldown_minutes_1:
+guard_1_audio_cooldown_minutes:
   name: "Guard 1: Setting - Audio Cooldown (min)"
   min: 0
   max: 60

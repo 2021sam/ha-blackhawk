@@ -2,7 +2,7 @@
   alias: PIR Guardian - ON - 1
   description: >
     PIR ON: Light turns on only if not daylight-blocked. Power strip always on.
-    Speak PREVIOUS motion time only if cooldown is idle. Update last_motion_time_1.
+    Speak PREVIOUS motion time only if cooldown is idle. Update guard_1_last_motion_time.
 
   triggers:
     - trigger: state
@@ -18,7 +18,7 @@
                 {{ target_light not in ['unknown','unavailable','none','None',''] }}
             - condition: template
               value_template: >-
-                {{ is_state('input_boolean.block_light_daytime_1','off')
+                {{ is_state('input_boolean.guard_1_block_light_daytime','off')
                    or is_state('sun.sun','below_horizon') }}
           sequence:
             - action: light.turn_on
@@ -34,7 +34,7 @@
     - choose:
         - conditions:
             - condition: state
-              entity_id: timer.audio_cooldown_1
+              entity_id: timer.guard_1_audio_cooldown
               state: idle
             - condition: template
               value_template: >-
@@ -82,15 +82,15 @@
     # Update timestamp LAST
     - action: input_datetime.set_datetime
       target:
-        entity_id: input_datetime.last_motion_time_1
+        entity_id: input_datetime.guard_1_last_motion_time
       data:
         datetime: "{{ now() }}"
 
   variables:
-    target_light: "{{ states('input_select.guard_1_target_light_1') }}"
-    audio_choice: "{{ states('input_select.guard_1_audio_target_1') }}"
+    target_light: "{{ states('input_select.guard_1_target_light') }}"
+    audio_choice: "{{ states('input_select.guard_1_audio_target') }}"
     prev_ts: >-
-      {% set s = states('input_datetime.last_motion_time_1') %}
+      {% set s = states('input_datetime.guard_1_last_motion_time') %}
       {% if s not in ['unknown','unavailable','none',''] %}
         {{ as_timestamp(s) }}
       {% else %}

@@ -13,17 +13,17 @@
       to: "off"
 
   variables:
-    target_light: "{{ states('input_select.guard_1_target_light_1') }}"
-    audio_choice: "{{ states('input_select.guard_1_audio_target_1') }}"
+    target_light: "{{ states('input_select.guard_1_target_light') }}"
+    audio_choice: "{{ states('input_select.guard_1_audio_target') }}"
     did_wav: false
-    cooldown_minutes: "{{ states('input_number.guard_1_audio_cooldown_minutes_1') | int(5) }}"
+    cooldown_minutes: "{{ states('input_number.guard_1_audio_cooldown_minutes') | int(5) }}"
 
   actions:
     # Play WAV (cooldown-gated) using helpers: None / All / media_player.*
     - choose:
         - conditions:
             - condition: state
-              entity_id: timer.audio_cooldown_1
+              entity_id: timer.guard_1_audio_cooldown
               state: idle
             - condition: template
               value_template: >
@@ -76,7 +76,7 @@
           sequence:
             - action: timer.start
               target:
-                entity_id: timer.audio_cooldown_1
+                entity_id: timer.guard_1_audio_cooldown
               data:
                 duration: "{{ '00:%02d:00' | format(cooldown_minutes) }}"
 

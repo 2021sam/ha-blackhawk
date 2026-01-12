@@ -1,6 +1,6 @@
 # helpers/group.yaml
 power_strip_1:
-  name: Guard 1 - Target - Power Strip
+  name: Power Strip 1
   entities:
     - switch.power_1_switch_1
     - switch.power_1_switch_2
@@ -10,7 +10,7 @@ power_strip_1:
 
 
 whole_home_audio:
-  name: Global — Audio — Whole Home
+  name: Audio — Whole Home
   entities:
     - media_player.amp_1   # Downstairs A30
     - media_player.amp_2   # Upstairs A30
