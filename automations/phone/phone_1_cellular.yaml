@@ -11,16 +11,16 @@
     prefix: "{{ phone_model }} Cellular: "
     speaker: media_player.amp_1
 
-    phone_state: sensor.phone_1_cellular_phone_state
-    n: sensor.phone_1_cellular_last_notification
+    phone_state: sensor.phone_1_phone_state
+    n: sensor.phone_1_last_notification
     sms_package: "com.samsung.android.messaging"
 
   trigger:
     - platform: state
-      entity_id: sensor.phone_1_cellular_phone_state
+      entity_id: sensor.phone_1_phone_state
 
     - platform: state
-      entity_id: sensor.phone_1_cellular_last_notification
+      entity_id: sensor.phone_1_last_notification
       attribute: post_time
 
   action:
