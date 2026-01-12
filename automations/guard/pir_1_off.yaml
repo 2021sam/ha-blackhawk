@@ -1,7 +1,7 @@
 # PART 2 (PIR OFF) — start cooldown using a user-adjustable minutes helper
 
 - id: guardian_01_pir_off
-  alias: PIR Guardian - OFF - 1
+  alias: Guardian 1 - PIR Clear
   description: >
     PIR OFF: immediately play WAV only if cooldown is idle, then turn off light +
     power strip. Start cooldown ONLY at the end and ONLY if WAV played.

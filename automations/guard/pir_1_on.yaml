@@ -1,5 +1,5 @@
 - id: guardian_01_pir_on
-  alias: PIR Guardian - ON - 1
+  alias: Guardian 1 - PIR Trigger
   description: >
     PIR ON: Light turns on only if not daylight-blocked. Power strip always on.
     Speak PREVIOUS motion time only if cooldown is idle. Update guard_1_last_motion_time.
