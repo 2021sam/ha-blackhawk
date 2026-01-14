@@ -1,27 +1,33 @@
 - id: '1767329000002'
-  alias: Phone 2 - Cellular - TTS
-  mode: restart
+  alias: Phone 2 - Cellular - TTS (Proven Pattern)
+  description: >
+    Phone 2 cellular events (proven pattern from Note9 working automation).
 
-  variables:
-    prefix: "Phone 2 Cellular: "
-    speaker: media_player.amp_1
-    phone_state: sensor.phone_2_phone_state
-    n: sensor.phone_2_last_notification
+    Sensors:
+    - Notifications: sensor.phone_2_last_notification
+    - Phone state:  sensor.phone_2_phone_state
 
-  trigger:
-    - platform: state
-      entity_id: sensor.phone_2_phone_state
-    - platform: state
-      entity_id: sensor.phone_2_last_notification
+    This speaks:
+    - Incoming call ringing (phone_state = ringing/incoming/offhook)
+    - Carrier SMS texts from Samsung Messages app (package = com.samsung.android.messaging)
+      (and also supports Google Messages if needed)
+  triggers:
+    - entity_id: sensor.phone_2_phone_state
+      trigger: state
+    - entity_id: sensor.phone_2_last_notification
+      attribute: post_time
+      trigger: state
 
-  action:
+  conditions: []
+
+  actions:
     - choose:
 
-        # 📞 Incoming call (Samsung-safe)
+        # 1) Incoming call
         - conditions:
             - condition: template
               value_template: >
-                {{ trigger.entity_id == phone_state
+                {{ trigger.entity_id == 'sensor.phone_2_phone_state'
                    and trigger.to_state is not none
                    and trigger.to_state.state in ['ringing','incoming','offhook'] }}
           sequence:
@@ -29,32 +35,42 @@
               target:
                 entity_id: tts.google_translate_en_com
               data:
-                media_player_entity_id: "{{ speaker }}"
+                media_player_entity_id: media_player.amp_1
                 message: "{{ prefix }}Phone is ringing."
 
-        # 📩 Cellular SMS (robust)
+        # 2) Cellular SMS (Samsung Messages; add Google Messages if you use it)
         - conditions:
             - condition: template
               value_template: >
-                {{ trigger.entity_id == n
-                   and trigger.to_state is not none
-                   and 'android' in trigger.to_state.attributes }}
+                {{ trigger.entity_id == 'sensor.phone_2_last_notification'
+                   and (state_attr('sensor.phone_2_last_notification','package') or '')
+                      in ['com.samsung.android.messaging','com.google.android.apps.messaging'] }}
           sequence:
             - variables:
-                who: "{{ trigger.to_state.attributes.get('android.title','Text') }}"
+                n: sensor.phone_2_last_notification
+                who: "{{ state_attr(n,'android.title') or 'Text' }}"
                 txt_raw: >
-                  {% set msgs = trigger.to_state.attributes.get('android.messages') %}
-                  {% if msgs is iterable and msgs|length > 0 and 'text' in msgs[-1] %}
+                  {% set msgs = state_attr(n,'android.messages') %}
+                  {% if msgs is iterable and msgs|length > 0 and msgs[-1] is mapping and 'text' in msgs[-1] %}
                     {{ msgs[-1].text }}
                   {% else %}
-                    {{ trigger.to_state.attributes.get('android.text','') }}
+                    {{ state_attr(n,'android.text')
+                       or state_attr(n,'android.bigText')
+                       or state_attr(n,'android.message')
+                       or '' }}
                   {% endif %}
-                txt: "{{ txt_raw | replace('\n',' ') | trim }}"
+                txt: "{{ txt_raw | replace('\n',' ') | replace('\r',' ') | trim | truncate(180, True, '…') }}"
             - condition: template
               value_template: "{{ txt|length > 0 }}"
             - action: tts.speak
               target:
                 entity_id: tts.google_translate_en_com
               data:
-                media_player_entity_id: "{{ speaker }}"
+                media_player_entity_id: media_player.amp_1
                 message: "{{ prefix }}{{ who }}: {{ txt }}"
+
+  mode: restart
+
+  variables:
+    phone_model: "Phone 2"
+    prefix: "{{ phone_model }} Cellular: "
