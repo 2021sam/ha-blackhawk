@@ -1,0 +1,68 @@
+- id: '1767329000001'
+  alias: Phone 2 - Cellular - TTS
+  description: >
+    Phone 2 cellular events:
+    - Incoming call ringing
+    - Cellular SMS texts
+  mode: restart
+
+  variables:
+    phone_model: "Phone 2"
+    prefix: "{{ phone_model }} Cellular: "
+    speaker: media_player.amp_1
+
+    phone_state: sensor.phone_2_phone_state
+    n: sensor.phone_2_last_notification
+    sms_package: "com.samsung.android.messaging"
+
+  trigger:
+    - platform: state
+      entity_id: sensor.phone_2_phone_state
+
+    - platform: state
+      entity_id: sensor.phone_2_last_notification
+      attribute: post_time
+
+  action:
+    - choose:
+
+        # 1) Incoming call ringing
+        - conditions:
+            - condition: template
+              value_template: >
+                {{ trigger.entity_id == phone_state
+                   and trigger.to_state is not none
+                   and trigger.to_state.state == 'ringing' }}
+          sequence:
+            - action: tts.speak
+              target:
+                entity_id: tts.google_translate_en_com
+              data:
+                media_player_entity_id: "{{ speaker }}"
+                message: "{{ prefix }}Phone is ringing."
+
+        # 2) Cellular SMS
+        - conditions:
+            - condition: template
+              value_template: >
+                {{ trigger.entity_id == n
+                   and (state_attr(n,'package') or '') == sms_package }}
+          sequence:
+            - variables:
+                who: "{{ state_attr(n,'android.title') or 'Text' }}"
+                txt_raw: >
+                  {% set msgs = state_attr(n,'android.messages') %}
+                  {% if msgs is iterable and msgs|length > 0 and msgs[-1] is mapping and 'text' in msgs[-1] %}
+                    {{ msgs[-1].text }}
+                  {% else %}
+                    {{ state_attr(n,'android.text') or '' }}
+                  {% endif %}
+                txt: "{{ txt_raw | replace('\n',' ') | replace('\r',' ') | trim | truncate(180, True, '…') }}"
+            - condition: template
+              value_template: "{{ txt|length > 0 }}"
+            - action: tts.speak
+              target:
+                entity_id: tts.google_translate_en_com
+              data:
+                media_player_entity_id: "{{ speaker }}"
+                message: "{{ prefix }}{{ who }}: {{ txt }}"
