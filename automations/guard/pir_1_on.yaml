@@ -1,7 +1,8 @@
 - id: guardian_01_pir_on
   alias: Guardian 1 - PIR Trigger
   description: >
-    PIR ON: Light turns on only if not daylight-blocked. Power strip always on.
+    PIR ON: Turn ON the selected target (either a light or group.power_strip_1).
+    If the target is a light, only turn on when not daylight-blocked.
     Speak PREVIOUS motion time only if cooldown is idle. Update guard_1_last_motion_time.
 
   triggers:
@@ -10,12 +11,13 @@
       to: "on"
 
   actions:
-    # Light ON (guarded)
+    # Turn ON selected target (Light OR Power Strip)
     - choose:
+        # Light selected (daylight guarded)
         - conditions:
             - condition: template
               value_template: >-
-                {{ target_light not in ['unknown','unavailable','none','None',''] }}
+                {{ is_light and target_entity not in ['unknown','unavailable','none','None',''] }}
             - condition: template
               value_template: >-
                 {{ is_state('input_boolean.guard_1_block_light_daytime','off')
@@ -23,12 +25,17 @@
           sequence:
             - action: light.turn_on
               target:
-                entity_id: "{{ target_light }}"
+                entity_id: "{{ target_entity }}"
 
-    # Power strip always ON
-    - action: homeassistant.turn_on
-      target:
-        entity_id: group.power_strip_1
+        # Power strip selected (no daylight guard)
+        - conditions:
+            - condition: template
+              value_template: >-
+                {{ is_power and target_entity not in ['unknown','unavailable','none','None',''] }}
+          sequence:
+            - action: homeassistant.turn_on
+              target:
+                entity_id: "{{ target_entity }}"
 
     # TTS (cooldown-gated)
     - choose:
@@ -87,8 +94,13 @@
         datetime: "{{ now() }}"
 
   variables:
-    target_light: "{{ states('input_select.guard_1_target_light') }}"
+    # This helper contains BOTH light.* and group.power_strip_1 (plus None)
+    target_entity: "{{ states('input_select.guard_1_target_light') }}"
+    is_light: "{{ target_entity.startswith('light.') }}"
+    is_power: "{{ target_entity.startswith('group.') or target_entity.startswith('switch.') }}"
+
     audio_choice: "{{ states('input_select.guard_1_audio_target') }}"
+
     prev_ts: >-
       {% set s = states('input_datetime.guard_1_last_motion_time') %}
       {% if s not in ['unknown','unavailable','none',''] %}
@@ -96,6 +108,7 @@
       {% else %}
         {{ none }}
       {% endif %}
+
     hours_since_prev: >-
       {% if prev_ts is not none %}
         {{ ((as_timestamp(now()) - (prev_ts | float)) / 3600) | float(0) }}

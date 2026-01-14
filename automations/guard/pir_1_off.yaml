@@ -1,11 +1,10 @@
-# PART 2 (PIR OFF) — start cooldown using a user-adjustable minutes helper
-
 - id: guardian_01_pir_off
   alias: Guardian 1 - PIR Clear
   description: >
-    PIR OFF: immediately play WAV only if cooldown is idle, then turn off light +
-    power strip. Start cooldown ONLY at the end and ONLY if WAV played.
-    Cooldown duration comes from input_number.guard_1_audio_cooldown_minutes_1.
+    PIR OFF: immediately play WAV only if cooldown is idle, then turn off the
+    selected target (either a light or group.power_strip_1). Start cooldown ONLY
+    at the end and ONLY if WAV played. Cooldown duration comes from
+    input_number.guard_1_audio_cooldown_minutes.
 
   triggers:
     - trigger: state
@@ -13,10 +12,21 @@
       to: "off"
 
   variables:
-    target_light: "{{ states('input_select.guard_1_target_light') }}"
+    target_entity: "{{ states('input_select.guard_1_target_light') }}"
     audio_choice: "{{ states('input_select.guard_1_audio_target') }}"
     did_wav: false
-    cooldown_minutes: "{{ states('input_number.guard_1_audio_cooldown_minutes') | int(5) }}"
+
+    # Slider minutes (default 5 if missing/unavailable)
+    cooldown_minutes: >-
+      {% set v = states('input_number.guard_1_audio_cooldown_minutes') %}
+      {% if v in ['unknown','unavailable','none',''] %}
+        5
+      {% else %}
+        {{ v | int(5) }}
+      {% endif %}
+
+    is_light: "{{ target_entity.startswith('light.') }}"
+    is_power: "{{ target_entity.startswith('group.') or target_entity.startswith('switch.') }}"
 
   actions:
     # Play WAV (cooldown-gated) using helpers: None / All / media_player.*
@@ -52,32 +62,36 @@
             - variables:
                 did_wav: true
 
-    # Light OFF (guarded)
+    # Turn OFF selected target (Light OR Power Strip)
     - choose:
         - conditions:
             - condition: template
-              value_template: >
-                {{ target_light not in ['unknown','unavailable','none','None',''] }}
+              value_template: >-
+                {{ is_light and target_entity not in ['None','none','unknown','unavailable',''] }}
           sequence:
             - action: light.turn_off
               target:
-                entity_id: "{{ target_light }}"
+                entity_id: "{{ target_entity }}"
 
-    # Power strip OFF
-    - action: homeassistant.turn_off
-      target:
-        entity_id: group.power_strip_1
+        - conditions:
+            - condition: template
+              value_template: >-
+                {{ is_power and target_entity not in ['None','none','unknown','unavailable',''] }}
+          sequence:
+            - action: homeassistant.turn_off
+              target:
+                entity_id: "{{ target_entity }}"
 
     # Start cooldown ONLY if WAV played (duration from slider)
     - choose:
         - conditions:
             - condition: template
-              value_template: "{{ did_wav and cooldown_minutes > 0 }}"
+              value_template: "{{ did_wav and (cooldown_minutes | int(0)) > 0 }}"
           sequence:
             - action: timer.start
               target:
                 entity_id: timer.guard_1_audio_cooldown
               data:
-                duration: "{{ '00:%02d:00' | format(cooldown_minutes) }}"
+                duration: "{{ '00:%02d:00' | format(cooldown_minutes | int(0)) }}"
 
   mode: single
