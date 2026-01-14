@@ -1,33 +1,49 @@
 - id: '1767329000002'
-  alias: Phone 2 - Cellular - TTS (Proven Pattern)
+  alias: Laurie - Phone 2 - Cellular - TTS (Phone-Specific)
   description: >
-    Phone 2 cellular events (proven pattern from Note9 working automation).
+    Phone 2 cellular events for Laurie.
 
     Sensors:
     - Notifications: sensor.phone_2_last_notification
     - Phone state:  sensor.phone_2_phone_state
 
-    This speaks:
-    - Incoming call ringing (phone_state = ringing/incoming/offhook)
-    - Carrier SMS texts from Samsung Messages app (package = com.samsung.android.messaging)
-      (and also supports Google Messages if needed)
-  triggers:
-    - entity_id: sensor.phone_2_phone_state
-      trigger: state
-    - entity_id: sensor.phone_2_last_notification
+    Speaks:
+    - Incoming call
+    - SMS texts (package filtered; body extracted from multiple fields)
+  mode: restart
+
+  variables:
+    phone_model: "Phone 2"
+    prefix: "Laurie - {{ phone_model }}: "
+    speaker: media_player.amp_1
+
+    phone_state: sensor.phone_2_phone_state
+    n: sensor.phone_2_last_notification
+
+    # We'll allow both common SMS apps; we'll also DEBUG the real one.
+    sms_packages:
+      - com.samsung.android.messaging
+      - com.google.android.apps.messaging
+
+  trigger:
+    - platform: state
+      entity_id: sensor.phone_2_phone_state
+
+    # IMPORTANT: different phones update differently, so we cover both
+    - platform: state
+      entity_id: sensor.phone_2_last_notification
+    - platform: state
+      entity_id: sensor.phone_2_last_notification
       attribute: post_time
-      trigger: state
 
-  conditions: []
-
-  actions:
+  action:
     - choose:
 
-        # 1) Incoming call
+        # 📞 Incoming call
         - conditions:
             - condition: template
               value_template: >
-                {{ trigger.entity_id == 'sensor.phone_2_phone_state'
+                {{ trigger.entity_id == phone_state
                    and trigger.to_state is not none
                    and trigger.to_state.state in ['ringing','incoming','offhook'] }}
           sequence:
@@ -35,42 +51,53 @@
               target:
                 entity_id: tts.google_translate_en_com
               data:
-                media_player_entity_id: media_player.amp_1
+                media_player_entity_id: "{{ speaker }}"
                 message: "{{ prefix }}Phone is ringing."
 
-        # 2) Cellular SMS (Samsung Messages; add Google Messages if you use it)
+        # 📩 SMS (phone-specific)
         - conditions:
             - condition: template
               value_template: >
-                {{ trigger.entity_id == 'sensor.phone_2_last_notification'
-                   and (state_attr('sensor.phone_2_last_notification','package') or '')
-                      in ['com.samsung.android.messaging','com.google.android.apps.messaging'] }}
+                {{ trigger.entity_id == n
+                   and trigger.to_state is not none
+                   and (trigger.to_state.attributes.get('package') or '') in sms_packages }}
           sequence:
+            # DEBUG (keep for now): shows where THIS PHONE stores the SMS body
+            - action: persistent_notification.create
+              data:
+                title: "Phone 2 SMS Debug"
+                message: >
+                  package={{ trigger.to_state.attributes.get('package') }}
+                  title={{ trigger.to_state.attributes.get('android.title') }}
+                  text={{ trigger.to_state.attributes.get('android.text') }}
+                  bigText={{ trigger.to_state.attributes.get('android.bigText') }}
+                  message={{ trigger.to_state.attributes.get('android.message') }}
+                  state={{ trigger.to_state.state }}
+
             - variables:
-                n: sensor.phone_2_last_notification
-                who: "{{ state_attr(n,'android.title') or 'Text' }}"
+                who: "{{ trigger.to_state.attributes.get('android.title') or 'Text' }}"
                 txt_raw: >
-                  {% set msgs = state_attr(n,'android.messages') %}
-                  {% if msgs is iterable and msgs|length > 0 and msgs[-1] is mapping and 'text' in msgs[-1] %}
-                    {{ msgs[-1].text }}
+                  {% set a = trigger.to_state.attributes %}
+                  {% set msgs = a.get('android.messages') %}
+                  {% if msgs is iterable and msgs|length > 0 and msgs[-1] is mapping and msgs[-1].get('text') %}
+                    {{ msgs[-1].get('text') }}
                   {% else %}
-                    {{ state_attr(n,'android.text')
-                       or state_attr(n,'android.bigText')
-                       or state_attr(n,'android.message')
+                    {{ a.get('android.bigText')
+                       or a.get('android.text')
+                       or a.get('android.message')
+                       or a.get('text')
+                       or a.get('message')
+                       or trigger.to_state.state
                        or '' }}
                   {% endif %}
                 txt: "{{ txt_raw | replace('\n',' ') | replace('\r',' ') | trim | truncate(180, True, '…') }}"
+
             - condition: template
               value_template: "{{ txt|length > 0 }}"
+
             - action: tts.speak
               target:
                 entity_id: tts.google_translate_en_com
               data:
-                media_player_entity_id: media_player.amp_1
+                media_player_entity_id: "{{ speaker }}"
                 message: "{{ prefix }}{{ who }}: {{ txt }}"
-
-  mode: restart
-
-  variables:
-    phone_model: "Phone 2"
-    prefix: "{{ phone_model }} Cellular: "
