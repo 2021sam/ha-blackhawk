@@ -1,16 +1,28 @@
-- id: '1767321854973'
+- id: 'phone-1-google-voice-tts'
   alias: Phone 1 - Google Voice - TTS
   description: >
     Google Voice notifications → TTS on amp_1.
-  triggers:
-    - entity_id: sensor.phone_1_last_notification
+  mode: restart
+
+  variables:
+    n: sensor.phone_1_last_notification
+    prefix: "Phone 1 Google Voice: "
+    gv_package: "com.google.android.apps.googlevoice"
+
+  trigger:
+    # Cover both update styles (some phones don't change post_time)
+    - platform: state
+      entity_id: sensor.phone_1_last_notification
+    - platform: state
+      entity_id: sensor.phone_1_last_notification
       attribute: post_time
-      trigger: state
-  conditions:
+
+  condition:
     - condition: template
       value_template: >
-        {{ state_attr(n,'package') == 'com.google.android.apps.googlevoice' }}
-  actions:
+        {{ (state_attr(n,'package') or '') == gv_package }}
+
+  action:
     - variables:
         who: "{{ state_attr(n,'android.title') or 'Google Voice' }}"
         txt_raw: >
@@ -18,18 +30,22 @@
           {% if msgs is iterable and msgs|length > 0 and msgs[-1] is mapping and 'text' in msgs[-1] %}
             {{ msgs[-1].text }}
           {% else %}
-            {{ state_attr(n,'android.text') or '' }}
+            {{ state_attr(n,'android.bigText')
+               or state_attr(n,'android.text')
+               or state_attr(n,'android.message')
+               or state_attr(n,'text')
+               or state_attr(n,'message')
+               or states(n)
+               or '' }}
           {% endif %}
         txt: "{{ txt_raw | replace('\n',' ') | replace('\r',' ') | trim | truncate(180, True, '…') }}"
+
     - condition: template
       value_template: "{{ txt|length > 0 }}"
+
     - action: tts.speak
       target:
         entity_id: tts.google_translate_en_com
       data:
         media_player_entity_id: media_player.amp_1
         message: "{{ prefix }}{{ who }}: {{ txt }}"
-  mode: single
-  variables:
-    n: sensor.phone_1_last_notification
-    prefix: "Phone 1 Google Voice: "
