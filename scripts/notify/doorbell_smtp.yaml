@@ -1,4 +1,4 @@
-doorbell_notify:
+doorbell_notify_smtp:
   alias: Doorbell Notification (SMS + Email)
   mode: single
   icon: mdi:doorbell

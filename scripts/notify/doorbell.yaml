@@ -1,0 +1,20 @@
+doorbell_notify:
+  alias: Doorbell Notification
+  mode: single
+  icon: mdi:doorbell
+
+  sequence:
+    # Immediate push to phone
+    - action: notify.mobile_app_sam
+      data:
+        title: Doorbell Activity
+        message: Doorbell vibration detected at the front porch.
+
+    # Stored record inside HA
+    - action: persistent_notification.create
+      data:
+        title: Doorbell Activity
+        message: >
+          Doorbell vibration detected at the front porch.
+
+          Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
