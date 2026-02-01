@@ -1,0 +1,19 @@
+doorbell_notify:
+  alias: Doorbell Notification (SMS + Email)
+  mode: single
+  icon: mdi:doorbell
+
+  sequence:
+    # --- Verizon SMS (SMTP) ---
+    - service: notify.sms_sam
+      data:
+        message: Doorbell vibration detected at the front porch.
+
+    # --- Email (SMTP) ---
+    - service: notify.email_sam
+      data:
+        title: Doorbell Activity Detected
+        message: >
+          A vibration was detected on the front doorbell.
+
+          Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}

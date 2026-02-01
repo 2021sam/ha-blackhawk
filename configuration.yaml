@@ -22,3 +22,26 @@ timer: !include helpers/timer.yaml
 
 # homeassistant:
 #   packages: !include_dir_named packages
+
+notify:
+  - name: email_sam
+    platform: smtp
+    server: smtp.gmail.com
+    port: 587
+    encryption: starttls
+    username: 2020sentinel@gmail.com
+    password: !secret gmail_app_password
+    sender: 2020sentinel@gmail.com
+    recipient:
+      - 7050592@gmail.com
+
+  - name: sms_sam
+    platform: smtp
+    server: smtp.gmail.com
+    port: 587
+    encryption: starttls
+    username: 2020sentinel@gmail.com
+    password: !secret gmail_app_password
+    sender: 2020sentinel@gmail.com
+    recipient:
+      - 5102465504@vtext.com
