@@ -1,0 +1,131 @@
+- id: realtor_01_pir_on
+  alias: Realtor 1 - PIR Trigger
+  description: >
+    PIR ON: Turn ON the selected target (either a light or group.power_strip_1).
+    If the target is a light, only turn on when not daylight-blocked.
+    Speak PREVIOUS motion time only if cooldown is idle. Update guard_1_last_motion_time.
+
+  triggers:
+    - trigger: state
+      entity_id: binary_sensor.sonoff_1_occupancy
+      to: "on"
+
+  actions:
+    # Turn ON selected target (Light OR Power Strip)
+    - choose:
+        # Light selected (daylight guarded)
+        - conditions:
+            - condition: template
+              value_template: >-
+                {{ is_light and target_entity not in ['unknown','unavailable','none','None',''] }}
+            - condition: template
+              value_template: >-
+                {{ is_state('input_boolean.guard_1_block_light_daytime','off')
+                   or is_state('sun.sun','below_horizon') }}
+          sequence:
+            - action: light.turn_on
+              target:
+                entity_id: "{{ target_entity }}"
+
+        # Power strip selected (no daylight guard)
+        - conditions:
+            - condition: template
+              value_template: >-
+                {{ is_power and target_entity not in ['unknown','unavailable','none','None',''] }}
+          sequence:
+            - action: homeassistant.turn_on
+              target:
+                entity_id: "{{ target_entity }}"
+
+    # TTS (cooldown-gated)
+    - choose:
+        - conditions:
+            - condition: state
+              entity_id: timer.guard_1_audio_cooldown
+              state: idle
+            - condition: template
+              value_template: >-
+                {{ audio_choice not in ['None','none','off','unknown','unavailable',''] }}
+          sequence:
+            - choose:
+                - conditions:
+                    - condition: template
+                      value_template: "{{ audio_choice in ['All','all','*'] }}"
+                  sequence:
+                    - action: tts.speak
+                      target:
+                        entity_id: tts.google_translate_en_com
+                      data:
+                        media_player_entity_id:
+                          - media_player.amp_1
+                          - media_player.amp_2
+                        message: >-
+                          {% set realtor = states('input_text.realtor_custom_tts') %}
+
+                          {% if realtor not in ['unknown','unavailable','none','None',''] %}
+                            {{ realtor }}
+                          {% else %}
+                            {% if prev_ts is none %}
+                              No previous motion time saved yet.
+                            {% elif hours_since_prev >= 24 %}
+                              Previous motion was on
+                              {{ (prev_ts | float) | timestamp_custom('%B %-d at %-I:%M %p', true) }}.
+                            {% else %}
+                              Previous motion was at
+                              {{ (prev_ts | float) | timestamp_custom('%-I:%M %p', true) }}.
+                            {% endif %}
+                          {% endif %}
+              default:
+                - action: tts.speak
+                  target:
+                    entity_id: tts.google_translate_en_com
+                  data:
+                    media_player_entity_id: "{{ audio_choice }}"
+                    message: >-
+                      {% set realtor = states('input_text.realtor_custom_tts') %}
+
+                      {% if realtor not in ['unknown','unavailable','none','None',''] %}
+                        {{ realtor }}
+                      {% else %}
+                        {% if prev_ts is none %}
+                          No previous motion time saved yet.
+                        {% elif hours_since_prev >= 24 %}
+                          Previous motion was on
+                          {{ (prev_ts | float) | timestamp_custom('%B %-d at %-I:%M %p', true) }}.
+                        {% else %}
+                          Previous motion was at
+                          {{ (prev_ts | float) | timestamp_custom('%-I:%M %p', true) }}.
+                        {% endif %}
+                      {% endif %}
+
+    # Update timestamp LAST
+    - action: input_datetime.set_datetime
+      target:
+        entity_id: input_datetime.guard_1_last_motion_time
+      data:
+        datetime: "{{ now() }}"
+
+  variables:
+    # This helper contains BOTH light.* and group.power_strip_1 (plus None)
+    target_entity: "{{ states('input_select.guard_1_target_light') }}"
+    is_light: "{{ target_entity.startswith('light.') }}"
+    is_power: "{{ target_entity.startswith('group.') or target_entity.startswith('switch.') }}"
+
+    audio_choice: "{{ states('input_select.guard_1_audio_target') }}"
+
+    prev_ts: >-
+      {% set s = states('input_datetime.guard_1_last_motion_time') %}
+      {% if s not in ['unknown','unavailable','none',''] %}
+        {{ as_timestamp(s) }}
+      {% else %}
+        {{ none }}
+      {% endif %}
+
+    hours_since_prev: >-
+      {% if prev_ts is not none %}
+        {{ ((as_timestamp(now()) - (prev_ts | float)) / 3600) | float(0) }}
+      {% else %}
+        {{ 0 }}
+      {% endif %}
+
+  mode: restart

@@ -16,6 +16,7 @@ input_number: !include_dir_merge_named helpers/input_number
 input_select: !include_dir_merge_named helpers/input_select
 input_boolean: !include_dir_merge_named helpers/input_boolean
 input_datetime: !include_dir_merge_named helpers/input_datetime
+input_text: !include_dir_merge_named helpers/input_text
 timer: !include_dir_merge_named helpers/timer
 
 
