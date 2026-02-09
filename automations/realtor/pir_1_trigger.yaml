@@ -2,34 +2,34 @@
   alias: Realtor 1 - PIR Trigger
   description: Realtor narration with volume control
 
-  triggers:
-    - trigger: state
+  trigger:
+    - platform: state
       entity_id: binary_sensor.sonoff_1_occupancy
       to: "on"
 
-  actions:
+  action:
 
     # Turn ON selected target
     - choose:
         - conditions:
             - condition: template
-              value_template: >-
+              value_template: >
                 {{ is_light and target_entity not in ['unknown','unavailable','none','None',''] }}
             - condition: template
-              value_template: >-
+              value_template: >
                 {{ is_state('input_boolean.guard_1_block_light_daytime','off')
                    or is_state('sun.sun','below_horizon') }}
           sequence:
-            - action: light.turn_on
+            - service: light.turn_on
               target:
                 entity_id: "{{ target_entity }}"
 
         - conditions:
             - condition: template
-              value_template: >-
+              value_template: >
                 {{ is_power and target_entity not in ['unknown','unavailable','none','None',''] }}
           sequence:
-            - action: homeassistant.turn_on
+            - service: homeassistant.turn_on
               target:
                 entity_id: "{{ target_entity }}"
 
@@ -40,7 +40,7 @@
               entity_id: timer.guard_1_audio_cooldown
               state: idle
             - condition: template
-              value_template: >-
+              value_template: >
                 {{ audio_choice not in ['None','none','off','unknown','unavailable',''] }}
           sequence:
 
@@ -50,7 +50,7 @@
                     - condition: template
                       value_template: "{{ audio_choice in ['All','all','*'] }}"
                   sequence:
-                    - action: media_player.volume_set
+                    - service: media_player.volume_set
                       target:
                         entity_id:
                           - media_player.amp_1
@@ -58,7 +58,7 @@
                       data:
                         volume_level: "{{ states('input_number.realtor_audio_volume') | float(0.5) }}"
               default:
-                - action: media_player.volume_set
+                - service: media_player.volume_set
                   target:
                     entity_id: "{{ audio_choice }}"
                   data:
@@ -70,36 +70,28 @@
                     - condition: template
                       value_template: "{{ audio_choice in ['All','all','*'] }}"
                   sequence:
-                    - action: tts.speak
+                    - service: tts.speak
                       target:
                         entity_id: tts.google_translate_en_com
                       data:
                         media_player_entity_id:
                           - media_player.amp_1
                           - media_player.amp_2
-                        message: >-
+                        message: >
                           {% set realtor = states('input_text.realtor_custom_tts') %}
-                          {% if realtor not in ['unknown','unavailable','none','None',''] %}
-                            {{ realtor }}
-                          {% else %}
-                            Welcome.
-                          {% endif %}
+                          {{ realtor if realtor not in ['unknown','unavailable','none','None',''] else 'Welcome.' }}
               default:
-                - action: tts.speak
+                - service: tts.speak
                   target:
                     entity_id: tts.google_translate_en_com
                   data:
                     media_player_entity_id: "{{ audio_choice }}"
-                    message: >-
+                    message: >
                       {% set realtor = states('input_text.realtor_custom_tts') %}
-                      {% if realtor not in ['unknown','unavailable','none','None',''] %}
-                        {{ realtor }}
-                      {% else %}
-                        Welcome.
-                      {% endif %}
+                      {{ realtor if realtor not in ['unknown','unavailable','none','None',''] else 'Welcome.' }}
 
     # Update timestamp
-    - action: input_datetime.set_datetime
+    - service: input_datetime.set_datetime
       target:
         entity_id: input_datetime.guard_1_last_motion_time
       data:
