@@ -1,9 +1,7 @@
 - id: realtor_01_pir_on
   alias: Realtor 1 - PIR Trigger
   description: >
-    PIR ON: Turn ON the selected target (either a light or group.power_strip_1).
-    If the target is a light, only turn on when not daylight-blocked.
-    Speak PREVIOUS motion time only if cooldown is idle. Update guard_1_last_motion_time.
+    PIR ON Realtor narration with volume control.
 
   triggers:
     - trigger: state
@@ -13,7 +11,6 @@
   actions:
     # Turn ON selected target (Light OR Power Strip)
     - choose:
-        # Light selected (daylight guarded)
         - conditions:
             - condition: template
               value_template: >-
@@ -27,7 +24,6 @@
               target:
                 entity_id: "{{ target_entity }}"
 
-        # Power strip selected (no daylight guard)
         - conditions:
             - condition: template
               value_template: >-
@@ -37,7 +33,7 @@
               target:
                 entity_id: "{{ target_entity }}"
 
-    # TTS (cooldown-gated)
+    # TTS
     - choose:
         - conditions:
             - condition: state
@@ -59,21 +55,13 @@
                         media_player_entity_id:
                           - media_player.amp_1
                           - media_player.amp_2
+                        volume_level: "{{ states('input_number.realtor_audio_volume') | float(0.5) }}"
                         message: >-
                           {% set realtor = states('input_text.realtor_custom_tts') %}
-
                           {% if realtor not in ['unknown','unavailable','none','None',''] %}
                             {{ realtor }}
                           {% else %}
-                            {% if prev_ts is none %}
-                              No previous motion time saved yet.
-                            {% elif hours_since_prev >= 24 %}
-                              Previous motion was on
-                              {{ (prev_ts | float) | timestamp_custom('%B %-d at %-I:%M %p', true) }}.
-                            {% else %}
-                              Previous motion was at
-                              {{ (prev_ts | float) | timestamp_custom('%-I:%M %p', true) }}.
-                            {% endif %}
+                            Welcome.
                           {% endif %}
               default:
                 - action: tts.speak
@@ -81,24 +69,16 @@
                     entity_id: tts.google_translate_en_com
                   data:
                     media_player_entity_id: "{{ audio_choice }}"
+                    volume_level: "{{ states('input_number.realtor_audio_volume') | float(0.5) }}"
                     message: >-
                       {% set realtor = states('input_text.realtor_custom_tts') %}
-
                       {% if realtor not in ['unknown','unavailable','none','None',''] %}
                         {{ realtor }}
                       {% else %}
-                        {% if prev_ts is none %}
-                          No previous motion time saved yet.
-                        {% elif hours_since_prev >= 24 %}
-                          Previous motion was on
-                          {{ (prev_ts | float) | timestamp_custom('%B %-d at %-I:%M %p', true) }}.
-                        {% else %}
-                          Previous motion was at
-                          {{ (prev_ts | float) | timestamp_custom('%-I:%M %p', true) }}.
-                        {% endif %}
+                        Welcome.
                       {% endif %}
 
-    # Update timestamp LAST
+    # Update timestamp
     - action: input_datetime.set_datetime
       target:
         entity_id: input_datetime.guard_1_last_motion_time
@@ -106,26 +86,9 @@
         datetime: "{{ now() }}"
 
   variables:
-    # This helper contains BOTH light.* and group.power_strip_1 (plus None)
     target_entity: "{{ states('input_select.guard_1_target_light') }}"
     is_light: "{{ target_entity.startswith('light.') }}"
     is_power: "{{ target_entity.startswith('group.') or target_entity.startswith('switch.') }}"
-
     audio_choice: "{{ states('input_select.guard_1_audio_target') }}"
-
-    prev_ts: >-
-      {% set s = states('input_datetime.guard_1_last_motion_time') %}
-      {% if s not in ['unknown','unavailable','none',''] %}
-        {{ as_timestamp(s) }}
-      {% else %}
-        {{ none }}
-      {% endif %}
-
-    hours_since_prev: >-
-      {% if prev_ts is not none %}
-        {{ ((as_timestamp(now()) - (prev_ts | float)) / 3600) | float(0) }}
-      {% else %}
-        {{ 0 }}
-      {% endif %}
 
   mode: restart
