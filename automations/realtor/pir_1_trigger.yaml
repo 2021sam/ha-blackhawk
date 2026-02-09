@@ -1,7 +1,6 @@
 - id: realtor_01_pir_on
   alias: Realtor 1 - PIR Trigger
-  description: >
-    PIR ON Realtor narration with volume control.
+  description: Realtor narration with volume control
 
   triggers:
     - trigger: state
@@ -9,7 +8,8 @@
       to: "on"
 
   actions:
-    # Turn ON selected target (Light OR Power Strip)
+
+    # Turn ON selected target
     - choose:
         - conditions:
             - condition: template
@@ -33,7 +33,7 @@
               target:
                 entity_id: "{{ target_entity }}"
 
-    # TTS
+    # TTS WITH VOLUME CONTROL
     - choose:
         - conditions:
             - condition: state
@@ -43,6 +43,28 @@
               value_template: >-
                 {{ audio_choice not in ['None','none','off','unknown','unavailable',''] }}
           sequence:
+
+            # Set volume FIRST
+            - choose:
+                - conditions:
+                    - condition: template
+                      value_template: "{{ audio_choice in ['All','all','*'] }}"
+                  sequence:
+                    - action: media_player.volume_set
+                      target:
+                        entity_id:
+                          - media_player.amp_1
+                          - media_player.amp_2
+                      data:
+                        volume_level: "{{ states('input_number.realtor_audio_volume') | float(0.5) }}"
+              default:
+                - action: media_player.volume_set
+                  target:
+                    entity_id: "{{ audio_choice }}"
+                  data:
+                    volume_level: "{{ states('input_number.realtor_audio_volume') | float(0.5) }}"
+
+            # Speak
             - choose:
                 - conditions:
                     - condition: template
@@ -55,7 +77,6 @@
                         media_player_entity_id:
                           - media_player.amp_1
                           - media_player.amp_2
-                        volume_level: "{{ states('input_number.realtor_audio_volume') | float(0.5) }}"
                         message: >-
                           {% set realtor = states('input_text.realtor_custom_tts') %}
                           {% if realtor not in ['unknown','unavailable','none','None',''] %}
@@ -69,7 +90,6 @@
                     entity_id: tts.google_translate_en_com
                   data:
                     media_player_entity_id: "{{ audio_choice }}"
-                    volume_level: "{{ states('input_number.realtor_audio_volume') | float(0.5) }}"
                     message: >-
                       {% set realtor = states('input_text.realtor_custom_tts') %}
                       {% if realtor not in ['unknown','unavailable','none','None',''] %}

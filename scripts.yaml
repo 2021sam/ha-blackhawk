@@ -57,14 +57,19 @@ test_play_soundscape:
   alias: TEST – Play Soundscape - amp 1
   mode: single
   sequence:
-  - target:
+  - action: media_player.volume_set
+    target:
+      entity_id: media_player.amp_1
+    data:
+      volume_level: 0.1
+  - action: media_player.play_media
+    target:
       entity_id: media_player.amp_1
     data:
       media:
         media_content_id: /local/soundscapes/1.wav
         media_content_type: music
         metadata: {}
-    action: media_player.play_media
   description: ''
 test_play_soundscape_simplified:
   alias: TEST – Play Soundscape - simplified - amp 2
@@ -188,3 +193,21 @@ deercreek_test_automations_solution_speak_title_text_5_success:
       message: '{{ msg }}'
     action: tts.speak
   description: This solution is used in the Automations
+test_play_soundscape_amp_1_ui_1:
+  alias: TEST – Play Soundscape - amp 1 - UI - .1
+  mode: single
+  sequence:
+  - action: media_player.volume_set
+    target:
+      entity_id: media_player.amp_1
+    data:
+      volume_level: 0.1
+  - action: media_player.play_media
+    target:
+      entity_id: media_player.amp_1
+    data:
+      media:
+        media_content_id: /local/soundscapes/1.wav
+        media_content_type: music
+        metadata: {}
+  description: ''
