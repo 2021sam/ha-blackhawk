@@ -10,10 +10,12 @@ automation: !include_dir_merge_list automations
 script: !include_dir_merge_named scripts
 scene: !include scenes.yaml
 
-
 # Helpers
-input_select: !include helpers/input_select.yaml
 group: !include helpers/group.yaml
+
+# Auto Off Helpers
+input_number: !include helpers/auto_off/input_number.yaml
+input_select: !include helpers/auto_off/input_select.yaml
 
 # Guardian Helpers
 input_boolean: !include helpers/guardian/input_boolean.yaml
@@ -21,6 +23,7 @@ input_datetime: !include helpers/guardian/input_datetime.yaml
 input_number: !include helpers/guardian/input_number.yaml
 input_select: !include helpers/guardian/input_select.yaml
 timer: !include helpers/guardian/timer.yaml
+
 
 
 notify:

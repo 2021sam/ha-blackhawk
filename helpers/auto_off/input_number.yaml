@@ -1,4 +1,4 @@
-# homeassistant/helpers/input_number.yaml
+# homeassistant/helpers/auto_off/input_number.yaml
 
 auto_off_minutes_1:
   name: "Auto-off 1: Minutes"
