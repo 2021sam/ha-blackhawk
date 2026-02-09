@@ -1,0 +1,12 @@
+# homeassistant/helpers/guardian/input_number.yaml
+
+# Guardian:
+guard_1_audio_cooldown_minutes:
+  name: "Guard 1: Setting - Audio Cooldown (min)"
+  min: 0
+  max: 60
+  step: 1
+  mode: slider
+  unit_of_measurement: min
+  icon: mdi:timer-cog
+  initial: 10

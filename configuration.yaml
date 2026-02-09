@@ -6,22 +6,22 @@ default_config:
 frontend:
   themes: !include_dir_merge_named themes
 
-# automation: !include automations.yaml
-
-
 automation: !include_dir_merge_list automations
 script: !include_dir_merge_named scripts
 scene: !include scenes.yaml
 
-input_number: !include helpers/input_number.yaml
-input_select: !include helpers/input_select.yaml
-input_boolean: !include helpers/input_boolean.yaml
-group: !include helpers/group.yaml
-input_datetime: !include helpers/input_datetime.yaml
-timer: !include helpers/timer.yaml
 
-# homeassistant:
-#   packages: !include_dir_named packages
+# Helpers
+input_select: !include helpers/input_select.yaml
+group: !include helpers/group.yaml
+
+# Guardian Helpers
+input_boolean: !include helpers/guardian/input_boolean.yaml
+input_datetime: !include helpers/guardian/input_datetime.yaml
+input_number: !include helpers/guardian/input_number.yaml
+input_select: !include helpers/guardian/input_select.yaml
+timer: !include helpers/guardian/timer.yaml
+
 
 notify:
   - name: email_sam

@@ -1,0 +1,59 @@
+- id: doorbell_vibration_any_orientation
+  alias: Doorbell – Aqara Vibration (Orientation Ignored)
+  mode: single
+
+  triggers:
+    - trigger: event
+      event_type: zha_event
+      event_data:
+        device_id: 3cc694ee7b414f10f9f9561bfc877492
+        command: current_orientation
+
+  variables:
+    raw_x: "{{ trigger.event.data.args.rawValueX | int }}"
+    raw_y: "{{ trigger.event.data.args.rawValueY | int }}"
+    raw_z: "{{ trigger.event.data.args.rawValueZ | int }}"
+    now_ts: "{{ now().timestamp() }}"
+    last_ts: >-
+      {% set t = states('input_datetime.doorbell_last_trigger') %}
+      {{ as_timestamp(t) if t not in ['unknown','unavailable',''] else 0 }}
+
+  conditions:
+    # 1) Any meaningful acceleration (tune threshold)
+    - condition: template
+      value_template: >
+        {{
+          raw_x | abs > 60 or
+          raw_y | abs > 60 or
+          raw_z | abs > 60
+        }}
+
+    # 2) Cooldown to ignore flips / noise
+    - condition: template
+      value_template: "{{ (now_ts - last_ts) > 2 }}"
+
+  actions:
+    # Record trigger time
+    - action: input_datetime.set_datetime
+      target:
+        entity_id: input_datetime.doorbell_last_trigger
+      data:
+        datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+    # Persistent HA notification
+    - action: persistent_notification.create
+      data:
+        title: Doorbell Pressed
+        message: >
+          Doorbell vibration detected.
+
+          rawX={{ raw_x }}
+          rawY={{ raw_y }}
+          rawZ={{ raw_z }}
+          Time={{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+
+    # Mobile push
+    - action: notify.mobile_app_sam
+      data:
+        title: Doorbell
+        message: Doorbell pressed
