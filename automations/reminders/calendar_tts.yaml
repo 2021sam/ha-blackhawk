@@ -1,0 +1,162 @@
+- id: calendar_tts_reminders
+  alias: Google Calendar TTS Reminders
+  description: >
+    Every minute, read upcoming Google Calendar events.
+    Parse Remind: offsets and TTS: messages.
+    Speak only reminders due during the current minute.
+
+  triggers:
+    - trigger: time_pattern
+      minutes: "*"
+      seconds: "0"
+
+  actions:
+    # Read upcoming Google Calendar events.
+    - action: calendar.get_events
+      target:
+        entity_id: calendar.2018supersam_gmail_com
+      data:
+        duration:
+          days: 7
+      response_variable: agenda
+
+    # Process each upcoming event.
+    - repeat:
+        for_each: >
+          {{ agenda['calendar.2018supersam_gmail_com']['events'] | default([]) }}
+
+        sequence:
+          # Get event description and start time.
+          - variables:
+              event_description: >
+                {{ repeat.item.description | default('', true) }}
+
+              event_start: >
+                {{ repeat.item.start }}
+
+          # Extract:
+          #
+          # Remind: 1h, 45m, 30m, 15m
+          # TTS: Sam will pick you up at 11:00 AM.
+          - variables:
+              remind_line: >
+                {% set matches =
+                     event_description
+                     | regex_findall('(?im)^\\s*Remind\\s*:\\s*([^\\r\\n]+)') %}
+                {{ matches[0] | trim if matches else '' }}
+
+              tts_message: >
+                {% set matches =
+                     event_description
+                     | regex_findall('(?im)^\\s*TTS\\s*:\\s*([^\\r\\n]+)') %}
+                {{ matches[0] | trim if matches else '' }}
+
+          # Find the exact reminder token due THIS minute.
+          #
+          # Examples:
+          #   1h
+          #   45m
+          #   25m
+          - variables:
+              matched_reminder: >
+                {% set ns = namespace(token='') %}
+                {% set start = as_local(as_datetime(event_start)) %}
+                {% set current_minute =
+                     now().replace(second=0, microsecond=0) %}
+
+                {% if remind_line | trim != '' %}
+
+                  {% for raw in remind_line.split(',') %}
+
+                    {% set token = raw | trim | lower %}
+
+                    {% if token | length >= 2 %}
+
+                      {% set unit = token[-1] %}
+                      {% set amount = token[:-1] | int(-1) %}
+
+                      {% if amount >= 0 and unit in ['m', 'h', 'd'] %}
+
+                        {% if unit == 'm' %}
+
+                          {% set reminder_time =
+                               start - timedelta(minutes=amount) %}
+
+                        {% elif unit == 'h' %}
+
+                          {% set reminder_time =
+                               start - timedelta(hours=amount) %}
+
+                        {% else %}
+
+                          {% set reminder_time =
+                               start - timedelta(days=amount) %}
+
+                        {% endif %}
+
+                        {% set reminder_minute =
+                             reminder_time.replace(
+                               second=0,
+                               microsecond=0
+                             ) %}
+
+                        {% if reminder_minute == current_minute %}
+                          {% set ns.token = token %}
+                        {% endif %}
+
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+
+                {{ ns.token }}
+
+          # Convert the matching token into spoken English.
+          #
+          # 25m -> 25 minute reminder
+          # 1h  -> 1 hour reminder
+          # 2h  -> 2 hour reminder
+          # 1d  -> 1 day reminder
+          - variables:
+              reminder_phrase: >
+                {% set token = matched_reminder | trim | lower %}
+
+                {% if token | length >= 2 %}
+
+                  {% set unit = token[-1] %}
+                  {% set amount = token[:-1] | int(0) %}
+
+                  {% if unit == 'm' %}
+                    {{ amount }} minute reminder
+
+                  {% elif unit == 'h' %}
+                    {{ amount }} hour reminder
+
+                  {% elif unit == 'd' %}
+                    {{ amount }} day reminder
+
+                  {% else %}
+                    reminder
+                  {% endif %}
+
+                {% else %}
+                  reminder
+                {% endif %}
+
+          # Speak only if this event has a reminder due right now.
+          - if:
+              - condition: template
+                value_template: >
+                  {{ matched_reminder | trim != ''
+                     and tts_message | trim != ''
+                     and states('input_select.guard_1_audio_target')
+                         not in ['None', 'none', 'off',
+                                 'unknown', 'unavailable', ''] }}
+
+            then:
+              - action: script.speak_calendar_reminder
+                data:
+                  message: >
+                    {{ reminder_phrase }} {{ tts_message }}.
+
+  mode: single

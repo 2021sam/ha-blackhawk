@@ -1,0 +1,25 @@
+speak_calendar_reminder:
+  alias: Speak Calendar Reminder
+  description: Speak a calendar reminder on the selected Guard 1 audio target.
+  mode: queued
+
+  fields:
+    message:
+      name: Message
+      description: Text to speak
+      required: true
+      selector:
+        text:
+
+  sequence:
+    - variables:
+        audio_choice: >
+          {{ states('input_select.guard_1_audio_target') }}
+
+    - action: tts.speak
+      target:
+        entity_id: tts.google_translate_en_com
+      data:
+        cache: true
+        media_player_entity_id: "{{ audio_choice }}"
+        message: "{{ message }}"
