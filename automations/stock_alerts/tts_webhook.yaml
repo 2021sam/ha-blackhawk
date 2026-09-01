@@ -1,0 +1,23 @@
+- id: stock_alert_tts_webhook
+  alias: "Stock alerts: announce SaaS notification"
+  description: "Receives stock alerts from the SaaS and announces them through Smart Showing."
+  mode: queued
+  max: 10
+
+  trigger:
+    - platform: webhook
+      webhook_id: !secret stock_alert_webhook_id
+      allowed_methods:
+        - POST
+      local_only: true
+
+  condition: []
+
+  action:
+    - service: tts.speak
+      target:
+        entity_id: tts.google_translate_en_com
+      data:
+        media_player_entity_id: media_player.amp_2
+        message: "{{ trigger.json.message }}"
+        cache: true

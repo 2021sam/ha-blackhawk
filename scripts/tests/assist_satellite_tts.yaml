@@ -1,0 +1,32 @@
+assist_satellite_tts:
+  alias: Test Assist TTS
+  mode: single
+
+  variables:
+    audio_choice: "{{ states('input_select.guard_1_audio_target') }}"
+
+  sequence:
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ audio_choice in ['All','all','*'] }}"
+          sequence:
+            - action: tts.speak
+              target:
+                entity_id: tts.google_translate_en_com
+              data:
+                media_player_entity_id:
+                  - media_player.amp_1
+                  - media_player.amp_2
+                message: "Testing one two three"
+
+        - conditions:
+            - condition: template
+              value_template: "{{ audio_choice not in ['None','none','off','unknown','unavailable',''] }}"
+          sequence:
+            - action: tts.speak
+              target:
+                entity_id: tts.google_translate_en_com
+              data:
+                media_player_entity_id: "{{ audio_choice }}"
+                message: "Testing one two three"
