@@ -43,3 +43,18 @@ notify:
     sender: 2020sentinel@gmail.com
     recipient:
       - 5102465504@vtext.com
+
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 172.30.33.0/24
+
+google_assistant:
+  project_id: blackhawk-0f891
+  service_account: !include SERVICE_ACCOUNT.json
+  report_state: true
+  expose_by_default: false
+  entity_config:
+    light.wall_dimmer_1:
+      name: Wall Dimmer One
+      expose: true

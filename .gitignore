@@ -31,3 +31,9 @@ _backup_*/
 #!.storage/input_datetime
 #!input_datetime
 
+
+# Google Assistant service-account credentials
+SERVICE_ACCOUNT.json
+
+# Local cache
+.cache/
