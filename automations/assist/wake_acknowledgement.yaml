@@ -1,0 +1,40 @@
+- id: assist_wake_acknowledgement
+  alias: Assist - Wake Acknowledgement
+  description: Say "Yes, I am listening" on the selected audio target when Okay Nabu is detected.
+
+  triggers:
+    - trigger: state
+      entity_id: assist_satellite.assist_microphone
+      from: "idle"
+      to: "listening"
+
+  variables:
+    audio_choice: "{{ states('input_select.guard_1_audio_target') }}"
+
+  actions:
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ audio_choice in ['All','all','*'] }}"
+          sequence:
+            - action: tts.speak
+              target:
+                entity_id: tts.google_translate_en_com
+              data:
+                media_player_entity_id:
+                  - media_player.amp_1
+                  - media_player.amp_2
+                message: "Yes, I am listening"
+
+        - conditions:
+            - condition: template
+              value_template: "{{ audio_choice not in ['None','none','off','unknown','unavailable',''] }}"
+          sequence:
+            - action: tts.speak
+              target:
+                entity_id: tts.google_translate_en_com
+              data:
+                media_player_entity_id: "{{ audio_choice }}"
+                message: "Yes, I am listening"
+
+  mode: restart
