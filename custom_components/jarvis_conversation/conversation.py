@@ -124,20 +124,81 @@ class JarvisConversationEntity(conversation.ConversationEntity):
             label = speakers.get(number, speakers["1"])[1]
             return f"Your selected speaker is {label}."
 
-        # Speaker discovery belongs to Learning Mode.
-        if command in (
+        # JARVIS_SPEAKER_DISCOVERY_V1
+        configured_commands = (
             "what speakers are available",
             "which speakers are available",
             "list speakers",
             "list available speakers",
             "show speakers",
             "what are my speakers",
-        ):
+        )
+
+        discovery_commands = (
+            "discover speakers",
+            "find speakers",
+            "scan for speakers",
+            "discover media players",
+        )
+
+        if command in configured_commands:
+            descriptions = ["One, this Pixel, local"]
+
+            for number in ("2", "3"):
+                entity_id, label = speakers[number]
+                state = self.hass.states.get(entity_id)
+
+                available = (
+                    state is not None
+                    and state.state not in ("unknown", "unavailable")
+                )
+
+                status = "available" if available else "unavailable"
+                descriptions.append(
+                    f"{number}, {label}, {status}"
+                )
+
             return (
-                "Learning Mode. Configured speakers are: "
-                "one, this Pixel; two, Family Room; "
-                "three, Upstairs. "
-                "For example, say change speaker to Family Room."
+                "Configured speakers: "
+                + "; ".join(descriptions)
+                + ". Say discover speakers to find other devices."
+            )
+
+        if command in discovery_commands:
+            configured_ids = {
+                "media_player.amp_1",
+                "media_player.amp_2",
+            }
+
+            discovered = []
+
+            for state in self.hass.states.async_all("media_player"):
+                if state.entity_id in configured_ids:
+                    continue
+
+                if state.state in ("unknown", "unavailable"):
+                    continue
+
+                name = state.attributes.get(
+                    "friendly_name",
+                    state.entity_id,
+                )
+
+                discovered.append(
+                    f"{name}, {state.entity_id}"
+                )
+
+            if not discovered:
+                return (
+                    "No additional available media players found. "
+                    "Your configured speakers remain unchanged."
+                )
+
+            return (
+                "Additional available media players: "
+                + "; ".join(sorted(discovered))
+                + ". These devices have not been added to "
+                  "Jarvis speaker selection."
             )
 
         # Cancel or repeat a pending selection.
