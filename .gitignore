@@ -37,3 +37,7 @@ SERVICE_ACCOUNT.json
 
 # Local cache
 .cache/
+
+# Jarvis development artifacts
+**/__pycache__/
+custom_components/jarvis_conversation/conversation.py.before_*
