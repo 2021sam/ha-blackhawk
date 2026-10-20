@@ -1,0 +1,10 @@
+{
+  "domain": "jarvis_conversation",
+  "name": "Jarvis Conversation",
+  "version": "0.1.0",
+  "config_flow": true,
+  "integration_type": "service",
+  "requirements": [],
+  "dependencies": ["conversation"],
+  "codeowners": []
+}
