@@ -1,0 +1,69 @@
+- id: home_ai_speaker_response
+  alias: Home AI - Speak Response on Selected Audio
+  description: Send a spoken question to Ollama and speak its answer on the selected audio target.
+
+
+  # triggers:
+  #   - trigger: conversation
+  #     command:
+  #       - "Zyxe {question}"
+  #       - "Zikes {question}"
+  #       - "ask Zyxe {question}"
+  #       - "ask Zikes {question}"
+
+  triggers:
+    - trigger: conversation
+      command:
+        - "Disco {question}"
+        - "Hey Disco {question}"
+        - "Ask Disco {question}"
+        - "Ask Home AI {question}"
+
+
+
+  variables:
+    question: "{{ trigger.slots.question }}"
+    audio_choice: "{{ states('input_select.guard_1_audio_target') }}"
+
+  actions:
+    - action: conversation.process
+      data:
+        agent_id: conversation.ollama_m1_home_control
+        language: en
+        conversation_id: home_ai_speaker_conversation
+        text: "{{ question }}"
+      response_variable: agent_response
+
+    - variables:
+        answer: "{{ agent_response.response.speech.plain.speech }}"
+
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ audio_choice in ['All', 'all', '*'] }}"
+          sequence:
+            - action: tts.speak
+              target:
+                entity_id: tts.google_translate_en_com
+              data:
+                media_player_entity_id:
+                  - media_player.amp_1
+                  - media_player.amp_2
+                message: "{{ answer }}"
+
+        - conditions:
+            - condition: template
+              value_template: >
+                {{ audio_choice not in
+                   ['None', 'none', 'off', 'unknown', 'unavailable', ''] }}
+          sequence:
+            - action: tts.speak
+              target:
+                entity_id: tts.google_translate_en_com
+              data:
+                media_player_entity_id: "{{ audio_choice }}"
+                message: "{{ answer }}"
+
+    - set_conversation_response: ""
+
+  mode: single
