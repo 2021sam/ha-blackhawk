@@ -3,7 +3,10 @@
   description: >
     PIR ON: Turn ON the selected target (either a light or group.power_strip_1).
     If the target is a light, only turn on when not daylight-blocked.
-    Speak PREVIOUS motion time only if cooldown is idle. Update guard_1_last_motion_time.
+    Speak PREVIOUS motion time only if cooldown is idle.
+    After speaking, start the audio cooldown using
+    input_number.guard_1_audio_cooldown_minutes.
+    Update guard_1_last_motion_time.
 
   triggers:
     - trigger: state
@@ -37,7 +40,7 @@
               target:
                 entity_id: "{{ target_entity }}"
 
-    # TTS (cooldown-gated)
+    # Announce previous motion time only when cooldown is idle
     - choose:
         - conditions:
             - condition: state
@@ -86,6 +89,18 @@
                         {{ (prev_ts | float) | timestamp_custom('%-I:%M %p', true) }}.
                       {% endif %}
 
+            # Cooldown belongs to the previous-motion announcement.
+            # The input_number helper is the duration setting.
+            - if:
+                - condition: template
+                  value_template: "{{ cooldown_minutes > 0 }}"
+              then:
+                - action: timer.start
+                  target:
+                    entity_id: timer.guard_1_audio_cooldown
+                  data:
+                    duration: "{{ '%02d:%02d:00' | format(cooldown_minutes // 60, cooldown_minutes % 60) }}"
+
     # Update timestamp LAST
     - action: input_datetime.set_datetime
       target:
@@ -94,12 +109,15 @@
         datetime: "{{ now() }}"
 
   variables:
-    # This helper contains BOTH light.* and group.power_strip_1 (plus None)
     target_entity: "{{ states('input_select.guard_1_target_light') }}"
     is_light: "{{ target_entity.startswith('light.') }}"
     is_power: "{{ target_entity.startswith('group.') or target_entity.startswith('switch.') }}"
 
     audio_choice: "{{ states('input_select.guard_1_audio_target') }}"
+
+    # Single source of truth for announcement cooldown duration
+    cooldown_minutes: >-
+      {{ states('input_number.guard_1_audio_cooldown_minutes') | int(0) }}
 
     prev_ts: >-
       {% set s = states('input_datetime.guard_1_last_motion_time') %}
