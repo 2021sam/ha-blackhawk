@@ -101,6 +101,27 @@
                   data:
                     duration: "{{ '%02d:%02d:00' | format(cooldown_minutes // 60, cooldown_minutes % 60) }}"
 
+    # Restart cooldown on every qualifying PIR activation,
+    # even when audio is suppressed by an active cooldown.
+    - if:
+        - condition: template
+          value_template: "{{ cooldown_minutes | int(0) > 0 }}"
+        - condition: template
+          value_template: >-
+            {{ (is_light and
+                target_entity not in ['unknown','unavailable','none','None',''] and
+                (is_state('input_boolean.guard_1_block_light_daytime','off')
+                 or is_state('sun.sun','below_horizon')))
+               or
+               (is_power and
+                target_entity not in ['unknown','unavailable','none','None','']) }}
+      then:
+        - action: timer.start
+          target:
+            entity_id: timer.guard_1_audio_cooldown
+          data:
+            duration: "{{ '%02d:%02d:00' | format(cooldown_minutes // 60, cooldown_minutes % 60) }}"
+
     # Update timestamp LAST
     - action: input_datetime.set_datetime
       target:
