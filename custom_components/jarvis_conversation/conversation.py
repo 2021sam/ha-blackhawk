@@ -34,6 +34,8 @@ class JarvisConversationEntity(conversation.ConversationEntity):
         self._speaker_store = None
         self._speaker_preferences = {}
         self._speaker_pending = set()
+        self._response_tone_store = None
+        self._response_tone_preferences = {}
         self._attr_unique_id = f"{entry.entry_id}_jarvis"
 
     async def _load_speaker_preferences(self):
@@ -45,6 +47,51 @@ class JarvisConversationEntity(conversation.ConversationEntity):
             )
             data = await self._speaker_store.async_load()
             self._speaker_preferences = (
+                data if isinstance(data, dict) else {}
+            )
+
+    async def _handle_response_tone_command(self, device_id, text):
+        """Manage response-tone preference for the originating device."""
+        await self._load_response_tone_preferences()
+
+        command = re.sub(r"[^a-z0-9 ]", " ", text.lower())
+        command = " ".join(command.split())
+        command = re.sub(r"^(?:hey )?jarvis\\s+", "", command)
+
+        match = re.fullmatch(
+            r"(enable|disable|turn on|turn off) "
+            r"(?:the |my )?(?:response|confirmation|wake) tone",
+            command,
+        )
+
+        if match:
+            enabled = match.group(1) in ("enable", "turn on")
+            self._response_tone_preferences[device_id] = enabled
+            await self._response_tone_store.async_save(
+                self._response_tone_preferences
+            )
+            return "Response tone enabled." if enabled else "Response tone disabled."
+
+        if command in (
+            "response tone status",
+            "is response tone enabled",
+            "is response tone disabled",
+            "confirmation tone status",
+            "wake tone status",
+        ):
+            enabled = self._response_tone_preferences.get(device_id, True)
+            return "Response tone is enabled." if enabled else "Response tone is disabled."
+
+        return None
+
+    async def _load_response_tone_preferences(self):
+        """Load persistent per-device response-tone settings."""
+        if self._response_tone_store is None:
+            self._response_tone_store = Store(
+                self.hass, 1, "jarvis_response_tone_preferences"
+            )
+            data = await self._response_tone_store.async_load()
+            self._response_tone_preferences = (
                 data if isinstance(data, dict) else {}
             )
 
@@ -368,9 +415,13 @@ class JarvisConversationEntity(conversation.ConversationEntity):
 
         # JARVIS_SPEAKER_REGISTRY_V1
         device_id = user_input.device_id or "home-assistant"
-        speaker_reply = await self._handle_speaker_command(
+        speaker_reply = await self._handle_response_tone_command(
             device_id, user_input.text
         )
+        if speaker_reply is None:
+            speaker_reply = await self._handle_speaker_command(
+                device_id, user_input.text
+            )
 
         if speaker_reply is not None:
             response = intent.IntentResponse(language=user_input.language)
