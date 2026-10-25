@@ -253,3 +253,44 @@ Use, share, and adapt as you see fit.
 
 ---
 
+<!-- JARVIS_PRODUCT_STATUS_2026 -->
+## Jarvis Home Hub integration: phases and status
+
+This Home Assistant configuration is the **home-automation side of the Jarvis Home Hub prototype**. The Mac-side AI/API service is documented in the companion `anythingllm-wake` repository. **Phase 1 is a working demonstration, not a customer-ready installation package.**
+
+### Phase 1 — Working in the demonstration home
+
+- Custom `jarvis_conversation` integration forwards Assist requests and device identifiers to the Jarvis API.
+- Pixel 6 Pro acts as an always-listening “Hey Jarvis” voice entry point.
+- Home Assistant performs configured device actions; device commands are routed separately from free-form LLM answers.
+- Per-device speaker preferences support voice-selectable destinations, including Family Room audio; Pixel plus external audio output has been tested.
+- Guardian/motion lighting automation with an adjustable audio cooldown; motion retriggers reset the cooldown interval.
+- Existing helper, script, and automation directories support lighting, audio, notifications, and other house-specific workflows.
+
+### Phase 2 — Experimental / incomplete
+
+| Capability | Status | Next milestone |
+| --- | --- | --- |
+| Appliance operating instructions | Experimental, handled through Mac-side AnythingLLM | Verified manufacturer-specific step-by-step guidance |
+| Guided cooking conversations | Experimental | Reliable multi-turn state and safety checks |
+| Wake acknowledgment tone | Incomplete | Confirm tone reliably plays when wake word activates microphone |
+| Continuous follow-up voice interaction | Partially implemented across components | Test end-to-end hands-free task continuation |
+| Multi-room voice routing | Manual speaker selection works | More automatic and context-aware room selection |
+
+### Phase 3 — Planned for customer installations
+
+- Portable configuration and setup wizard; avoid hard-coded entity IDs, rooms, and IP addresses.
+- Repeatable deployment, backup, update, rollback, and diagnostics procedures.
+- Customer-safe onboarding, secrets management, and documented supported devices.
+- Acceptance testing for voice control, audio, privacy, and safety.
+
+### Example user experience
+
+1. Say “Hey Jarvis” near the Pixel voice satellite.
+2. Ask Jarvis to control a configured Home Assistant light or answer a question from household documents.
+3. Choose a response speaker by voice, e.g. “change speaker to Family Room.”
+4. For appliance guidance, treat responses as **experimental** until verified against the manufacturer's manual.
+
+### Security and publication
+
+Do not publish tokens, passwords, service-account JSON, personal addresses, internal endpoints, or identifiable household data. Review Git diffs before pushing this repository publicly.
