@@ -41,3 +41,8 @@ SERVICE_ACCOUNT.json
 # Jarvis development artifacts
 **/__pycache__/
 custom_components/jarvis_conversation/conversation.py.before_*
+
+# Jarvis diagnostic output
+diagnostics/logs/
+diagnostics/*.bak
+README.md.bak.*
