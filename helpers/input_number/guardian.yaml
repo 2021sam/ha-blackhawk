@@ -9,4 +9,3 @@ guard_1_audio_cooldown_minutes:
   mode: slider
   unit_of_measurement: min
   icon: mdi:timer-cog
-  initial: 10
