@@ -1,0 +1,10 @@
+enable_family_room_motion_sensor:
+  alias: Enable Family Room Motion Sensor
+  description: Enable Guardian 1 motion-triggered automations.
+  mode: single
+  sequence:
+    - action: automation.turn_on
+      target:
+        entity_id:
+          - automation.pir_guardian_on_1
+          - automation.pir_guardian_off_1

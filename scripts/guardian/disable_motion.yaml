@@ -1,0 +1,12 @@
+disable_family_room_motion_sensor:
+  alias: Disable Family Room Motion Sensor
+  description: Disable Guardian 1 motion-triggered automations.
+  mode: single
+  sequence:
+    - action: automation.turn_off
+      target:
+        entity_id:
+          - automation.pir_guardian_on_1
+          - automation.pir_guardian_off_1
+      data:
+        stop_actions: true

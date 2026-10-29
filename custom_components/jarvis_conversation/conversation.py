@@ -38,6 +38,91 @@ class JarvisConversationEntity(conversation.ConversationEntity):
         self._response_tone_preferences = {}
         self._attr_unique_id = f"{entry.entry_id}_jarvis"
 
+    async def _handle_motion_command(self, text):
+        """Handle Family Room motion automation commands."""
+        command = re.sub(r"[^a-z0-9 ]", " ", text.lower())
+        command = " ".join(command.split())
+        command = re.sub(r"^(?:hey )?jarvis\\s+", "", command)
+        command = re.sub(r"^please\\s+", "", command)
+
+        target = (
+            r"(?:the )?family room "
+            r"(?:motion sensor|motion control|motion automation)"
+        )
+
+        change = re.fullmatch(
+            r"(enable|disable|turn on|turn off) " + target,
+            command,
+        )
+
+        entities = (
+            "automation.pir_guardian_on_1",
+            "automation.pir_guardian_off_1",
+        )
+
+        if change:
+            enabled = change.group(1) in ("enable", "turn on")
+            script = (
+                "enable_family_room_motion_sensor"
+                if enabled
+                else "disable_family_room_motion_sensor"
+            )
+
+            try:
+                await self.hass.services.async_call(
+                    "script",
+                    script,
+                    {},
+                    blocking=True,
+                )
+            except Exception:
+                return "I couldn't change Family Room motion control."
+
+            expected = "on" if enabled else "off"
+
+            if all(
+                (state := self.hass.states.get(entity)) is not None
+                and state.state == expected
+                for entity in entities
+            ):
+                return (
+                    "Family Room motion control enabled."
+                    if enabled
+                    else "Family Room motion control disabled."
+                )
+
+            return "Family Room motion control state could not be confirmed."
+
+        status = re.fullmatch(
+            r"(?:is |what is the status of )?"
+            + target
+            + r"(?: enabled| on| status)?",
+            command,
+        )
+
+        if status:
+            states = [
+                self.hass.states.get(entity)
+                for entity in entities
+            ]
+
+            if any(
+                state is None
+                or state.state in ("unknown", "unavailable")
+                for state in states
+            ):
+                return "Family Room motion control status is unavailable."
+
+            if all(state.state == "on" for state in states):
+                return "Family Room motion control is enabled."
+
+            if all(state.state == "off" for state in states):
+                return "Family Room motion control is disabled."
+
+            return "Family Room motion control is partially enabled."
+
+        return None
+
     async def _load_speaker_preferences(self):
         if self._speaker_store is None:
             self._speaker_store = Store(
@@ -421,6 +506,12 @@ class JarvisConversationEntity(conversation.ConversationEntity):
         if speaker_reply is None:
             speaker_reply = await self._handle_speaker_command(
                 device_id, user_input.text
+            )
+
+        # JARVIS_MOTION_CONTROL_V1
+        if speaker_reply is None:
+            speaker_reply = await self._handle_motion_command(
+                user_input.text
             )
 
         if speaker_reply is not None:
